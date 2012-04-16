@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: campfire | rooted - a code blog]]></title>
+  <link href="http://rootdown.net/blog/categories/campfire/atom.xml" rel="self"/>
+  <link href="http://rootdown.net/"/>
+  <updated>2012-04-16T11:51:53-06:00</updated>
+  <id>http://rootdown.net/</id>
+  <author>
+    <name><![CDATA[Cameron Johnston]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Campfire sing-a-longs with Chef]]></title>
+    <link href="http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef/"/>
+    <updated>2012-04-12T22:01:00-06:00</updated>
+    <id>http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef</id>
+    <content type="html"><![CDATA[<p>Like many small teams, Needle uses <a href="http://www.campfirenow.com">37signals' Campfire</a> chat platform for collaborating online. Along with messages exchanged between coworkers, we also use Campfire for announcing new git commits, jira tickets and successful application deployments.</p>
+
+<p>Since the code I've been using to send messages from Chef recipes to Campfire is virtually identical between a number of our cookbooks, I decided to turn that code into a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that anyone can use in their own recipes. The cookbook for this LWRP is <a href="http://github.com/cwjohnston/chef-campfire">available on github</a>.</p>
+
+<h2>Requirements</h2>
+
+<ul>
+<li>a Campfire API token (these are unique to each Campfire user, so if you want your messages to come from a particular user, get their token)</li>
+<li>the <code>tinder</code> gem (installed by the <code>campfire::default</code> recipe)</li>
+</ul>
+
+
+<h2>Attributes</h2>
+
+<ul>
+<li><code>subdomain</code> - the subdomain for your Campfire instance (required)</li>
+<li><code>room</code> - the name of the room you would like to speak into (requied)</li>
+<li><code>token</code> - authentication token for your Campfire account (required)</li>
+<li><code>message</code> - the message to speak. If a message is not specified, the name of the <code>campfire_msg</code> resource is used.</li>
+<li><code>paste</code> - toggles whether or not to send the message as a monospaced "paste" (defaults to false)</li>
+<li><code>play_before</code> - play the specified sound before speaking the message</li>
+<li><code>play_after</code> - play the specified sound after speaking the message</li>
+<li><code>failure_ok</code> - toggles whether or not to catch the exception if an error is encountered connecting to Campfire (defaults to true)</li>
+</ul>
+
+
+<p>A list of emoji and sounds available in Campfire can be found here: http://www.emoji-cheat-sheet.com/</p>
+
+<h2>Usage examples</h2>
+
+<p>``` ruby
+include_recipe 'campfire'</p>
+
+<p>campfire_msg 'bad news' do
+  subdomain 'example'
+  room 'Important Stuff'
+  token '0xdedbeef0xdedbeef0xdedbeef'
+  message "I have some bad news... there was an error: #{some_error}"
+  play_after 'trombone'
+end
+```</p>
+]]></content>
+  </entry>
+  
+</feed>

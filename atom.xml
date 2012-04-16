@@ -1,99 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
 
-<!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  <title>rooted - a code blog</title>
-  <meta name="author" content="Cameron Johnston">
-
-  
-  <meta name="description" content="This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since &hellip;">
-  
-
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  
-  <link rel="canonical" href="http://rootdown.net">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="/javascripts/ender.js"></script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <link href="/atom.xml" rel="alternate" title="rooted - a code blog" type="application/atom+xml">
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-
-  
-
-</head>
-
-<body   >
-  <header role="banner"><hgroup>
-  <h1><a href="/">rooted - a code blog</a></h1>
-  
-    <h2>To err is human... to really foul up requires the root password.</h2>
-  
-</hgroup>
-
-</header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-  
-<form action="http://google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="q" value="site:rootdown.net" />
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-  
-<ul class="main-navigation">
-  <li><a href="/">Blog</a></li>
-  <li><a href="/blog/archives">Archives</a></li>
-</ul>
-
-</nav>
-  <div id="main">
-    <div id="content">
-      <div class="blog-index">
-  
-  
-  
-    <article>
-      
-  <header>
+  <title><![CDATA[rooted - a code blog]]></title>
+  <link href="http://rootdown.net/atom.xml" rel="self"/>
+  <link href="http://rootdown.net/"/>
+  <updated>2012-04-16T11:51:53-06:00</updated>
+  <id>http://rootdown.net/</id>
+  <author>
+    <name><![CDATA[Cameron Johnston]]></name>
     
-      <h1 class="entry-title"><a href="/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/">Adding resource_tag LWRP to the aws cookbook</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
 
   
-
-
-<time datetime="2012-04-14T15:08:00-06:00" pubdate data-updated="true">Apr 14<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since Opscode already publishes an <code>aws</code> cookbook with providers for other AWS resources, I figured it would be worthwhile to create a provider for manipulating these tags and contribute it back upstream.</p>
+  <entry>
+    <title type="html"><![CDATA[Adding resource_tag LWRP to the aws cookbook]]></title>
+    <link href="http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/"/>
+    <updated>2012-04-14T15:08:00-06:00</updated>
+    <id>http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook</id>
+    <content type="html"><![CDATA[<p>This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since Opscode already publishes an <code>aws</code> cookbook with providers for other AWS resources, I figured it would be worthwhile to create a provider for manipulating these tags and contribute it back upstream.</p>
 
 <p>The result of this Saturday project is the <code>resource_tag</code> LWRP. Source available <a href="https://github.com/cwjohnston/chef-opscode-aws/commit/fac8434abc380a903397be2605c48919fd128e6f">here</a>, Opscode ticket <a href="http://tickets.opscode.com/browse/COOK-1195">here</a>.</p>
 
@@ -164,42 +89,15 @@
 
 
 <p>When setting tags on the node&#8217;s own EC2 instance, I recommend wrapping <code>resource_tag</code> resources in a conditional like <code>if node.has_key?('ec2')</code> so that your recipe will still run on Chef nodes outside of EC2 as well.</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/04/12/campfire-sing-a-longs-with-chef/">Campfire sing-a-longs with Chef</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-04-12T22:01:00-06:00" pubdate data-updated="true">Apr 12<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Like many small teams, Needle uses <a href="http://www.campfirenow.com">37signals&#8217; Campfire</a> chat platform for collaborating online. Along with messages exchanged between coworkers, we also use Campfire for announcing new git commits, jira tickets and successful application deployments.</p>
+  <entry>
+    <title type="html"><![CDATA[Campfire sing-a-longs with Chef]]></title>
+    <link href="http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef/"/>
+    <updated>2012-04-12T22:01:00-06:00</updated>
+    <id>http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef</id>
+    <content type="html"><![CDATA[<p>Like many small teams, Needle uses <a href="http://www.campfirenow.com">37signals&#8217; Campfire</a> chat platform for collaborating online. Along with messages exchanged between coworkers, we also use Campfire for announcing new git commits, jira tickets and successful application deployments.</p>
 
 <p>Since the code I&#8217;ve been using to send messages from Chef recipes to Campfire is virtually identical between a number of our cookbooks, I decided to turn that code into a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that anyone can use in their own recipes. The cookbook for this LWRP is <a href="http://github.com/cwjohnston/chef-campfire">available on github</a>.</p>
 
@@ -249,42 +147,15 @@
 </span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/04/10/introducing-deploy-wrapper/">Using deploy_wrapper to set the stage for deployments via Chef</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-04-10T13:25:00-06:00" pubdate data-updated="true">Apr 10<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Chef&#8217;s <code>deploy</code> and <code>deploy_revision</code> resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, without depending on an external system (e.g. Capistrano.) Many Chef users learning to use these resources for the first time will find that they also need to install an SSH deploy key and an SSH wrapper script for Git before they can make effective use of these deploy resources, and that the Chef wiki doesn&#8217;t provide much documentation around this issue.</p>
+  <entry>
+    <title type="html"><![CDATA[Using deploy_wrapper to set the stage for deployments via Chef]]></title>
+    <link href="http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper/"/>
+    <updated>2012-04-10T13:25:00-06:00</updated>
+    <id>http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper</id>
+    <content type="html"><![CDATA[<p>Chef&#8217;s <code>deploy</code> and <code>deploy_revision</code> resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, without depending on an external system (e.g. Capistrano.) Many Chef users learning to use these resources for the first time will find that they also need to install an SSH deploy key and an SSH wrapper script for Git before they can make effective use of these deploy resources, and that the Chef wiki doesn&#8217;t provide much documentation around this issue.</p>
 
 <p>Enter <a href="http://github.com/cwjohnston/chef-deploy_wrapper"><code>deploy_wrapper</code></a>: a Chef definition which handles the installation of an SSH deploy key and SSH wrapper script to be used by a <code>deploy</code> or <code>deploy_revision</code> resource.</p>
 
@@ -417,145 +288,7 @@
 <p>The <code>sloppy</code> parameter is the only optional one. Because the default configuration of most most ssh installations is to require manual verification when accepting a remote host&#8217;s key for the first time, the <code>sloppy</code> parameter allows one to toggle key checking (<code>StrictHostKeyChecking</code>) on or off.</p>
 
 <p>When the value for <code>sloppy</code> is <code>true</code>, the wrapper script will accept any host key without prompting. The default value for <code>sloppy</code> is <code>false</code>, meaning that additional Chef resources, or &#8230; <em>*gasp*</em> &#8230; manual intervention, will be required in order to set up a <code>known_hosts</code> file before deployments can run successfully.</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
-<aside class="sidebar">
-  
-    <section>
-<a href="http://chefconf.opscode.com/"><img src="http://chefconf.opscode.com/wp-content/uploads/ChefConf-Attending-Banner-1.png" title="ChefConf" alt="I"></a>
-</section>
-<section>
-<p>I&#8217;m Cameron Johnston and I use Chef to deploy and manage infrastructure at <a href="http://www.needle.com">Needle</a></p>
-<p><a href="/about">More&#8230;</a></p>
-</section>
-<section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/">Adding resource_tag LWRP to the aws cookbook</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/04/12/campfire-sing-a-longs-with-chef/">Campfire sing-a-longs with Chef</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/04/10/introducing-deploy-wrapper/">Using deploy_wrapper to set the stage for deployments via Chef</a>
-      </li>
-    
-  </ul>
-</section>
-
-<section>
-  <h1>GitHub Repos</h1>
-  <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
-  </ul>
-  
-  <a href="https://github.com/cwjohnston">@cwjohnston</a> on GitHub
-  
-  <script type="text/javascript">
-    $.domReady(function(){
-        if (!window.jXHR){
-            var jxhr = document.createElement('script');
-            jxhr.type = 'text/javascript';
-            jxhr.src = '/javascripts/libs/jXHR.js';
-            var s = document.getElementsByTagName('script')[0];
-            s.parentNode.insertBefore(jxhr, s);
-        }
-
-        github.showRepos({
-            user: 'cwjohnston',
-            count: 0,
-            skip_forks: true,
-            target: '#gh_repos'
-        });
-    });
-  </script>
-  <script src="/javascripts/github.js" type="text/javascript"> </script>
-</section>
-
-
-<section>
-  <h1>Latest Tweets</h1>
-  <ul id="tweets">
-    <li class="loading">Status updating&#8230;</li>
-  </ul>
-  <script type="text/javascript">
-    $.domReady(function(){
-      getTwitterFeed("cwjohnston", 4, false);
-    });
-  </script>
-  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
-  
-    <a href="http://twitter.com/cwjohnston" class="twitter-follow-button" data-show-count="false">Follow @cwjohnston</a>
-  
-</section>
-
-
-<section>
-  <h1>My Pinboard</h1>
-  <ul id="pinboard_linkroll">Fetching linkroll&#8230;</ul>
-  <p><a href="http://pinboard.in/u:cwjohnston">My Pinboard Bookmarks &raquo;</a></p>
-</section>
-<script type="text/javascript">
-  var linkroll = 'pinboard_linkroll'; //id target for pinboard list
-  var pinboard_user = "cwjohnston"; //id target for pinboard list
-  var pinboard_count = 3; //id target for pinboard list
-  (function(){
-    var pinboardInit = document.createElement('script');
-    pinboardInit.type = 'text/javascript';
-    pinboardInit.async = true;
-    pinboardInit.src = '/javascripts/pinboard.js';
-    document.getElementsByTagName('head')[0].appendChild(pinboardInit);
-  })();
-</script>
-
-
-  
-</aside>
-
-    </div>
-  </div>
-  <footer role="contentinfo"><p>
-  Copyright &copy; 2012 - Cameron Johnston -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
-</p>
-
-</footer>
-  
-
-
-
-
-
-
-
-  <script type="text/javascript">
-    (function(){
-      var twitterWidgets = document.createElement('script');
-      twitterWidgets.type = 'text/javascript';
-      twitterWidgets.async = true;
-      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
-      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
-    })();
-  </script>
-
-
-
-
-
-</body>
-</html>
+</feed>

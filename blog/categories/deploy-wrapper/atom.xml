@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: deploy_wrapper | rooted - a code blog]]></title>
+  <link href="http://rootdown.net/blog/categories/deploy-wrapper/atom.xml" rel="self"/>
+  <link href="http://rootdown.net/"/>
+  <updated>2012-04-16T11:51:53-06:00</updated>
+  <id>http://rootdown.net/</id>
+  <author>
+    <name><![CDATA[Cameron Johnston]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Using deploy_wrapper to set the stage for deployments via Chef]]></title>
+    <link href="http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper/"/>
+    <updated>2012-04-10T13:25:00-06:00</updated>
+    <id>http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper</id>
+    <content type="html"><![CDATA[<p>Chef's <code>deploy</code> and <code>deploy_revision</code> resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, without depending on an external system (e.g. Capistrano.) Many Chef users learning to use these resources for the first time will find that they also need to install an SSH deploy key and an SSH wrapper script for Git before they can make effective use of these deploy resources, and that the Chef wiki doesn't provide much documentation around this issue.</p>
+
+<p>Enter <a href="http://github.com/cwjohnston/chef-deploy_wrapper"><code>deploy_wrapper</code></a>: a Chef definition which handles the installation of an SSH deploy key and SSH wrapper script to be used by a <code>deploy</code> or <code>deploy_revision</code> resource.</p>
+
+<p>Before <code>deploy_wrapper</code>, a recipe to configure the required resources to make an automated <code>deploy</code> or <code>deploy_revision</code> possible might look something like this:</p>
+
+<p>``` ruby</p>
+
+<p>directory '/root/.ssh' do
+  owner "root"
+  group "root"
+  mode 0640
+end</p>
+
+<p>directory '/opt/myapp/shared' do
+  owner "root"
+  group "root"
+  mode 0755
+  recursive true
+end</p>
+
+<p>deploy_key = data_bag_item('keys', 'myapp_deploy_key')</p>
+
+<p>template "/root/.ssh/myapp_deploy_key" do
+  source "deploy_key.erb"
+  owner "root"
+  group "root"
+  mode 0600
+  variables({ :deploy_key => deploy_key })
+end</p>
+
+<p>template "/opt/myapp/shared/myapp_deploy_wrapper.sh" do
+  source "ssh_wrapper.sh.erb"
+  owner "root"
+  group "root"
+  mode 0755
+  variables({</p>
+
+<pre><code>:deploy_key_path =&gt; "/root/.ssh/myapp_deploy_key"
+</code></pre>
+
+<p>  })
+end</p>
+
+<p>deploy_revision "/opt/myapp" do
+  repository node['myapp']['repository']
+  revision node['myapp']['revision']
+  ...
+  ssh_wrapper "/opt/myapp/shared/myapp_deploy_wrapper.sh"
+end</p>
+
+<p>```</p>
+
+<p>Not counting the source to template files for these resources, thats almost 30 lines of code just to set the stage for a deployment. It didn't take long for me to grow tired of reusing this rather verbose pattern across a growing number of recipes.</p>
+
+<p>Here's how I accomplish the same thing with the <code>deploy_wrapper</code> definition:</p>
+
+<p>``` ruby
+deploy_key = data_bag_item('keys', 'myapp_deploy_key')</p>
+
+<p>deploy_wrapper "myapp" do
+  ssh_wrapper_dir "/opt/myapp/shared"
+  ssh_key_dir "/root/.ssh"
+  ssh_key_data deploy_key
+  sloppy true
+end</p>
+
+<p>deploy_revision "/opt/myapp" do
+  repository node['myapp']['repository']
+  revision node['myapp']['revision']
+  ...
+  ssh_wrapper "/opt/myapp/shared/myapp_deploy_wrapper.sh"
+end
+```</p>
+
+<p>Much better, right? Well, a lot shorter anyway. Now let's talk about what the <code>deploy_wrapper</code> parameters used in the above example are doing.</p>
+
+<p>The <code>ssh_key_dir</code> and <code>ssh_wrapper_dir</code> parameters specify directories which will be created by Chef. In the case of <code>ssh_wrapper_dir</code>, the git SSH wrapper script will automatically be created in this directory following the pattern "APPNAME_deploy_wrapper.sh", using the value of the name parameter (in this case, <code>myapp</code>) in place of "APPNAME".</p>
+
+<p>Similarly, an SSH key file containing the data passed to the <code>ssh_key_data</code> parameter will be created in the directory specified as the value for the <code>ssh_key_dir</code> parameter. The key file will be named following the pattern "APPNAME_deploy_key", using the value of the name parameter (<code>myapp</code>) in place of "APPNAME".</p>
+
+<p>The <code>sloppy</code> parameter is the only optional one. Because the default configuration of most most ssh installations is to require manual verification when accepting a remote host's key for the first time, the <code>sloppy</code> parameter allows one to toggle key checking (<code>StrictHostKeyChecking</code>) on or off.</p>
+
+<p>When the value for <code>sloppy</code> is <code>true</code>, the wrapper script will accept any host key without prompting. The default value for <code>sloppy</code> is <code>false</code>, meaning that additional Chef resources, or ... <em>*gasp*</em> ... manual intervention, will be required in order to set up a <code>known_hosts</code> file before deployments can run successfully.</p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>rooted - a code blog</title>
+  <title>Using deploy_wrapper to set the stage for deployments via Chef - rooted - a code blog</title>
   <meta name="author" content="Cameron Johnston">
 
   
-  <meta name="description" content="This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since &hellip;">
+  <meta name="description" content="Chef&#8217;s deploy and deploy_revision resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rootdown.net">
+  <link rel="canonical" href="http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -62,206 +62,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/">Adding resource_tag LWRP to the aws cookbook</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-04-14T15:08:00-06:00" pubdate data-updated="true">Apr 14<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since Opscode already publishes an <code>aws</code> cookbook with providers for other AWS resources, I figured it would be worthwhile to create a provider for manipulating these tags and contribute it back upstream.</p>
-
-<p>The result of this Saturday project is the <code>resource_tag</code> LWRP. Source available <a href="https://github.com/cwjohnston/chef-opscode-aws/commit/fac8434abc380a903397be2605c48919fd128e6f">here</a>, Opscode ticket <a href="http://tickets.opscode.com/browse/COOK-1195">here</a>.</p>
-
-<h2>Actions</h2>
-
-<ul>
-<li><code>add</code> - Add tags to a resource.</li>
-<li><code>update</code> - Add or modify existing tags on a resource &#8211; this is the default action.</li>
-<li><code>remove</code> - Remove tags from a resource, but only if the specified values match the existing ones.</li>
-<li><code>force_remove</code> - Remove tags from a resource, regardless of their values.</li>
-</ul>
-
-
-<h2>Attribute Parameters</h2>
-
-<ul>
-<li><code>aws_secret_access_key</code>, <code>aws_access_key</code> - passed to <code>Opscode::AWS:Ec2</code> to authenticate, required.</li>
-<li><code>tags</code> - a hash of key value pairs to be used as resource tags, (e.g. <code>{ "Name" =&gt; "foo", "Environment" =&gt; node.chef_environment }</code>,) required.</li>
-<li><code>resource_id</code> - resources whose tags will be modified. The value may be a single ID as a string or multiple IDs in an array. If no <code>resource_id</code> is specified the name attribute will be used.</li>
-</ul>
-
-
-<h2>Usage</h2>
-
-<p><code>resource_tag</code> can be used to manipulate the tags assigned to one or more AWS resources, i.e. ec2 instances, ebs volumes or ebs volume snapshots.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s2">&quot;aws&quot;</span>
-</span><span class='line'><span class="n">aws</span> <span class="o">=</span> <span class="n">data_bag_item</span><span class="p">(</span><span class="s2">&quot;aws&quot;</span><span class="p">,</span> <span class="s2">&quot;main&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># Assigining tags to a node to reflect it&#39;s role and environment:</span>
-</span><span class='line'><span class="n">aws_resource_tag</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;ec2&#39;</span><span class="o">][</span><span class="s1">&#39;instance_id&#39;</span><span class="o">]</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">aws_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_access_key_id&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">aws_secret_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_secret_access_key&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">tags</span><span class="p">({</span><span class="s2">&quot;Name&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;www.example.com app server&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s2">&quot;Environment&quot;</span> <span class="o">=&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">chef_environment</span><span class="p">})</span>
-</span><span class='line'>  <span class="n">action</span> <span class="ss">:update</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># Assigning a set of tags to multiple resources, e.g. ebs volumes in a disk set:</span>
-</span><span class='line'><span class="n">aws_resource_tag</span> <span class="s1">&#39;my awesome raid set&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">aws_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_access_key_id&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">aws_secret_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_secret_access_key&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">resource_id</span> <span class="o">[</span> <span class="s2">&quot;vol-d0518cb2&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-fad31a9a&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-fb106a9f&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-74ed3b14&quot;</span> <span class="o">]</span>
-</span><span class='line'>  <span class="n">tags</span><span class="p">({</span><span class="s2">&quot;Name&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;My awesome RAID disk set&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s2">&quot;Environment&quot;</span> <span class="o">=&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">chef_environment</span><span class="p">})</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>When setting tags on the node&#8217;s own EC2 instance, I recommend wrapping <code>resource_tag</code> resources in a conditional like <code>if node.has_key?('ec2')</code> so that your recipe will still run on Chef nodes outside of EC2 as well.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/04/12/campfire-sing-a-longs-with-chef/">Campfire sing-a-longs with Chef</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-04-12T22:01:00-06:00" pubdate data-updated="true">Apr 12<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Like many small teams, Needle uses <a href="http://www.campfirenow.com">37signals&#8217; Campfire</a> chat platform for collaborating online. Along with messages exchanged between coworkers, we also use Campfire for announcing new git commits, jira tickets and successful application deployments.</p>
-
-<p>Since the code I&#8217;ve been using to send messages from Chef recipes to Campfire is virtually identical between a number of our cookbooks, I decided to turn that code into a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that anyone can use in their own recipes. The cookbook for this LWRP is <a href="http://github.com/cwjohnston/chef-campfire">available on github</a>.</p>
-
-<h2>Requirements</h2>
-
-<ul>
-<li>a Campfire API token (these are unique to each Campfire user, so if you want your messages to come from a particular user, get their token)</li>
-<li>the <code>tinder</code> gem (installed by the <code>campfire::default</code> recipe)</li>
-</ul>
-
-
-<h2>Attributes</h2>
-
-<ul>
-<li><code>subdomain</code> - the subdomain for your Campfire instance (required)</li>
-<li><code>room</code> - the name of the room you would like to speak into (requied)</li>
-<li><code>token</code> - authentication token for your Campfire account (required)</li>
-<li><code>message</code> - the message to speak. If a message is not specified, the name of the <code>campfire_msg</code> resource is used.</li>
-<li><code>paste</code> - toggles whether or not to send the message as a monospaced &#8220;paste&#8221; (defaults to false)</li>
-<li><code>play_before</code> - play the specified sound before speaking the message</li>
-<li><code>play_after</code> - play the specified sound after speaking the message</li>
-<li><code>failure_ok</code> - toggles whether or not to catch the exception if an error is encountered connecting to Campfire (defaults to true)</li>
-</ul>
-
-
-<p>A list of emoji and sounds available in Campfire can be found here: http://www.emoji-cheat-sheet.com/</p>
-
-<h2>Usage examples</h2>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;campfire&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">campfire_msg</span> <span class="s1">&#39;bad news&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">subdomain</span> <span class="s1">&#39;example&#39;</span>
-</span><span class='line'>  <span class="n">room</span> <span class="s1">&#39;Important Stuff&#39;</span>
-</span><span class='line'>  <span class="n">token</span> <span class="s1">&#39;0xdedbeef0xdedbeef0xdedbeef&#39;</span>
-</span><span class='line'>  <span class="n">message</span> <span class="s2">&quot;I have some bad news... there was an error: </span><span class="si">#{</span><span class="n">some_error</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="n">play_after</span> <span class="s1">&#39;trombone&#39;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2012/04/10/introducing-deploy-wrapper/">Using deploy_wrapper to set the stage for deployments via Chef</a></h1>
+      <h1 class="entry-title">Using deploy_wrapper to set the stage for deployments via Chef</h1>
     
     
       <p class="meta">
@@ -284,7 +90,7 @@
   </header>
 
 
-  <div class="entry-content"><p>Chef&#8217;s <code>deploy</code> and <code>deploy_revision</code> resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, without depending on an external system (e.g. Capistrano.) Many Chef users learning to use these resources for the first time will find that they also need to install an SSH deploy key and an SSH wrapper script for Git before they can make effective use of these deploy resources, and that the Chef wiki doesn&#8217;t provide much documentation around this issue.</p>
+<div class="entry-content"><p>Chef&#8217;s <code>deploy</code> and <code>deploy_revision</code> resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, without depending on an external system (e.g. Capistrano.) Many Chef users learning to use these resources for the first time will find that they also need to install an SSH deploy key and an SSH wrapper script for Git before they can make effective use of these deploy resources, and that the Chef wiki doesn&#8217;t provide much documentation around this issue.</p>
 
 <p>Enter <a href="http://github.com/cwjohnston/chef-deploy_wrapper"><code>deploy_wrapper</code></a>: a Chef definition which handles the installation of an SSH deploy key and SSH wrapper script to be used by a <code>deploy</code> or <code>deploy_revision</code> resource.</p>
 
@@ -418,26 +224,67 @@
 
 <p>When the value for <code>sloppy</code> is <code>true</code>, the wrapper script will accept any host key without prompting. The default value for <code>sloppy</code> is <code>false</code>, meaning that additional Chef resources, or &#8230; <em>*gasp*</em> &#8230; manual intervention, will be required in order to set up a <code>known_hosts</code> file before deployments can run successfully.</p>
 </div>
+
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Cameron Johnston</span></span>
+
+      
+
+
+
+
+
+
+
+
   
 
 
-    </article>
+<time datetime="2012-04-10T13:25:00-06:00" pubdate data-updated="true">Apr 10<span>th</span>, 2012</time>
+      
+
+<span class="categories">
   
-  <div class="pagination">
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/deploy-wrapper/'>deploy_wrapper</a>
+  
+</span>
+
+
+    </p>
     
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper/" data-via="cwjohnston" data-counturl="http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper/" >Tweet</a>
+  
+  
+  
 </div>
+
+    
+    <p class="meta">
+      
+      
+        <a class="basic-alignment right" href="/blog/2012/04/12/campfire-sing-a-longs-with-chef/" title="Next Post: Campfire sing-a-longs with Chef">Campfire sing-a-longs with Chef &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
 <aside class="sidebar">
   
     <section>
 <a href="http://chefconf.opscode.com/"><img src="http://chefconf.opscode.com/wp-content/uploads/ChefConf-Attending-Banner-1.png" title="ChefConf" alt="I"></a>
 </section>
 <section>
-<p>I&#8217;m Cameron Johnston and I use Chef to deploy and manage infrastructure at <a href="http://www.needle.com">Needle</a></p>
-<p><a href="/about">More&#8230;</a></p>
+<p>I'm Cameron Johnston and I use Chef to deploy and manage infrastructure at <a href="http://www.needle.com">Needle</a></p>
+<p><a href="/about">More...</a></p>
 </section>
 <section>
   <h1>Recent Posts</h1>
@@ -461,7 +308,7 @@
 <section>
   <h1>GitHub Repos</h1>
   <ul id="gh_repos">
-    <li class="loading">Status updating&#8230;</li>
+    <li class="loading">Status updating...</li>
   </ul>
   
   <a href="https://github.com/cwjohnston">@cwjohnston</a> on GitHub
@@ -491,7 +338,7 @@
 <section>
   <h1>Latest Tweets</h1>
   <ul id="tweets">
-    <li class="loading">Status updating&#8230;</li>
+    <li class="loading">Status updating...</li>
   </ul>
   <script type="text/javascript">
     $.domReady(function(){
@@ -507,7 +354,7 @@
 
 <section>
   <h1>My Pinboard</h1>
-  <ul id="pinboard_linkroll">Fetching linkroll&#8230;</ul>
+  <ul id="pinboard_linkroll">Fetching linkroll...</ul>
   <p><a href="http://pinboard.in/u:cwjohnston">My Pinboard Bookmarks &raquo;</a></p>
 </section>
 <script type="text/javascript">
@@ -526,6 +373,7 @@
 
   
 </aside>
+
 
     </div>
   </div>
