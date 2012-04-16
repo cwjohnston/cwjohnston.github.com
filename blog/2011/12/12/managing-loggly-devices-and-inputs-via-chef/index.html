@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Campfire sing-a-longs with Chef - rooted - a code blog</title>
+  <title>Managing Loggly devices and inputs via Chef - rooted - a code blog</title>
   <meta name="author" content="Cameron Johnston">
 
   
-  <meta name="description" content="Like many small teams, Needle uses 37signals&#8217; Campfire chat platform for collaborating online. Along with messages exchanged between coworkers &hellip;">
+  <meta name="description" content="Introduction Recently I have been experimenting with the logging-as-a-service platform at Loggly. It seems pretty promising, and there&#8217;s a free &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef">
+  <link rel="canonical" href="http://rootdown.net/blog/2011/12/12/managing-loggly-devices-and-inputs-via-chef">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/bootstrap/bootstrap.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/bootstrap/responsive.css" media="screen, projection" rel="stylesheet" type="text/css">
@@ -102,7 +102,7 @@
   
   <header class="page-header">
     
-      <h1 class="entry-title">Campfire sing-a-longs with Chef</h1>
+      <h1 class="entry-title">Managing Loggly devices and inputs via Chef</h1>
     
     
       <p class="meta">
@@ -118,42 +118,77 @@
   
 
 
-<time datetime="2012-04-12T22:01:00-06:00" pubdate data-updated="true">Apr 12<span>th</span>, 2012</time>
+<time datetime="2011-12-12T15:19:00-07:00" pubdate data-updated="true">Dec 12<span>th</span>, 2011</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>Like many small teams, Needle uses <a href="http://www.campfirenow.com">37signals&#8217; Campfire</a> chat platform for collaborating online. Along with messages exchanged between coworkers, we also use Campfire for announcing new git commits, jira tickets and successful application deployments.</p>
+<div class="entry-content"><h1>Introduction</h1>
 
-<p>Since the code I&#8217;ve been using to send messages from Chef recipes to Campfire is virtually identical between a number of our cookbooks, I decided to turn that code into a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that anyone can use in their own recipes. The cookbook for this LWRP is <a href="http://github.com/cwjohnston/chef-campfire">available on github</a>.</p>
+<p>Recently I have been experimenting with the logging-as-a-service platform at <a href="http://loggly.com/">Loggly</a>. It seems pretty promising, and there&#8217;s a free tier for those who are indexing less than 200MB per day.</p>
 
-<h2>Requirements</h2>
+<p>Since I am using Chef to manage my systems, I decided I would take a crack at writing a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that would allow me to manage devices and inputs on my Loggly account through Chef. This makes it possible for new nodes to register themselves as Loggly devices when they are provisioned, without requiring me to make a trip to the Loggly control panel. The resulting cookbook is available here: <a href="http://github.com/cwjohnston/chef-loggly">http://github.com/cwjohnston/chef-loggly</a></p>
+
+<h1>Requirements</h1>
 
 <ul>
-<li>a Campfire API token (these are unique to each Campfire user, so if you want your messages to come from a particular user, get their token)</li>
-<li>the <code>tinder</code> gem (installed by the <code>campfire::default</code> recipe)</li>
+<li>Valid Loggly account username and password</li>
+<li><code>json</code> ruby gem</li>
 </ul>
 
 
-<h2>Attributes</h2>
+<h2>Required node attributes</h2>
 
 <ul>
-<li><code>subdomain</code> - the subdomain for your Campfire instance (required)</li>
-<li><code>room</code> - the name of the room you would like to speak into (requied)</li>
-<li><code>token</code> - authentication token for your Campfire account (required)</li>
-<li><code>message</code> - the message to speak. If a message is not specified, the name of the <code>campfire_msg</code> resource is used.</li>
-<li><code>paste</code> - toggles whether or not to send the message as a monospaced &#8220;paste&#8221; (defaults to false)</li>
-<li><code>play_before</code> - play the specified sound before speaking the message</li>
-<li><code>play_after</code> - play the specified sound after speaking the message</li>
-<li><code>failure_ok</code> - toggles whether or not to catch the exception if an error is encountered connecting to Campfire (defaults to true)</li>
+<li><code>node['loggly']['username']</code> - Your Loggly username.</li>
+<li><code>node['loggly']['password']</code> - Your Loggly password.</li>
 </ul>
 
 
-<p>A list of emoji and sounds available in Campfire can be found here: http://www.emoji-cheat-sheet.com/</p>
+<p>In the future these attributes should be made optional so that usernames and passwords can be specified as parameters for resource attributes.</p>
 
-<h2>Usage examples</h2>
+<h1>Recipes</h1>
+
+<ul>
+<li><code>default</code> - simply installs the <code>json</code> gem. Chef requires this gem as well, so it should already be available.</li>
+<li><code>rsyslog</code> - creates a loggly input for receiving syslog messages, registers the node as a device on that input and configures rsyslog to forward syslog messages there.</li>
+</ul>
+
+
+<h1>Resources</h1>
+
+<h2><code>loggly_input</code> - manage a log input</h2>
+
+<h3>Attributes</h3>
+
+<ul>
+<li><code>domain</code> - The subdomain for your loggly account</li>
+<li><code>description</code> - An optional descriptor for the input</li>
+<li><code>type</code> - The kind of input to create. May be one of the following:
+
+<ul>
+<li><code>http</code></li>
+<li><code>syslogudp</code></li>
+<li><code>syslogtcp</code></li>
+<li><code>syslog_tls</code></li>
+<li><code>syslogtcp_strip</code></li>
+<li><code>syslogudp_strip</code></li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Actions</h3>
+
+<ul>
+<li><code>create</code> - create the named input (default)</li>
+<li><code>delete</code> - delete the named input</li>
+</ul>
+
+
+<h3>Usage</h3>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -161,17 +196,48 @@
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;campfire&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">campfire_msg</span> <span class="s1">&#39;bad news&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">subdomain</span> <span class="s1">&#39;example&#39;</span>
-</span><span class='line'>  <span class="n">room</span> <span class="s1">&#39;Important Stuff&#39;</span>
-</span><span class='line'>  <span class="n">token</span> <span class="s1">&#39;0xdedbeef0xdedbeef0xdedbeef&#39;</span>
-</span><span class='line'>  <span class="n">message</span> <span class="s2">&quot;I have some bad news... there was an error: </span><span class="si">#{</span><span class="n">some_error</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="n">play_after</span> <span class="s1">&#39;trombone&#39;</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">loggly_input</span> <span class="s2">&quot;production-syslog&quot;</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">domain</span> <span class="s2">&quot;examplecorp&quot;</span>
+</span><span class='line'>    <span class="n">type</span> <span class="s2">&quot;syslogtcp&quot;</span>
+</span><span class='line'>    <span class="n">description</span> <span class="s2">&quot;syslog messages from production nodes&quot;</span>
+</span><span class='line'>    <span class="n">action</span> <span class="ss">:create</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2><code>loggly_device</code> - manage a device which sends logs to an input</h2>
+
+<p>The name of a <code>loggly_device</code> resource should be the IP address for the device. Loggly doesn&#8217;t do DNS lookups, it just wants the device&#8217;s IP.</p>
+
+<h3>Resource Attributes</h3>
+
+<ul>
+<li><code>username</code> - Your Loggly username. if no value is provided for this attribute, the value of <code>node['loggly']['username']</code> will be used.</li>
+<li><code>password</code> - Your Loggly password. if no value is provided for this attribute, the value of <code>node['loggly']['password']</code> will be used.</li>
+<li><code>domain</code> - The subdomain for your loggly account</li>
+<li><code>input</code> - the name of the input this device should be added to</li>
+</ul>
+
+
+<h3>Resource Actions</h3>
+
+<ul>
+<li><code>add</code> - add the device to the named input (default)</li>
+<li><code>delete</code> - remove the device from the named input</li>
+</ul>
+
+
+<h3>Usage</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">loggly_device</span> <span class="n">node</span><span class="o">[</span><span class="ss">:ipaddress</span><span class="o">]</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">domain</span> <span class="s2">&quot;examplecorp&quot;</span>
+</span><span class='line'>    <span class="n">input</span> <span class="s2">&quot;production-syslog&quot;</span>
+</span><span class='line'>    <span class="n">action</span> <span class="ss">:add</span>
 </span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
@@ -197,12 +263,12 @@
   
 
 
-<time datetime="2012-04-12T22:01:00-06:00" pubdate data-updated="true">Apr 12<span>th</span>, 2012</time>
+<time datetime="2011-12-12T15:19:00-07:00" pubdate data-updated="true">Dec 12<span>th</span>, 2011</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/campfire/'>campfire</a>, <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/lwrp/'>lwrp</a>
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/logging/'>logging</a>, <a class='category' href='/blog/categories/lwrp/'>lwrp</a>
   
 </span>
 
@@ -211,7 +277,7 @@
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef/" data-via="cwjohnston" data-counturl="http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rootdown.net/blog/2011/12/12/managing-loggly-devices-and-inputs-via-chef/" data-via="cwjohnston" data-counturl="http://rootdown.net/blog/2011/12/12/managing-loggly-devices-and-inputs-via-chef/" >Tweet</a>
   
   
   
@@ -221,14 +287,10 @@
     
     <ul class="pager">
       
-      <li class="previous"><a class="basic-alignment left"
-        href="/blog/2012/04/10/introducing-deploy-wrapper/" title="Previous Post:
-        Using deploy_wrapper to set the stage for deployments via Chef">&laquo; Using deploy_wrapper to set the stage for deployments via Chef</a></li>
-      
       <li><a href="/blog/archives">Blog Archives</a></li>
       
-      <li class="next"><a class="basic-alignment right" href="/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/"
-        title="Next Post: Adding resource_tag LWRP to the aws cookbook">Adding resource_tag LWRP to the aws cookbook
+      <li class="next"><a class="basic-alignment right" href="/blog/2012/03/16/managing-pingdom-service-checks-with-chef/"
+        title="Next Post: Managing Pingdom service checks with Chef">Managing Pingdom service checks with Chef
         &raquo;</a></li>
       
     </ul>

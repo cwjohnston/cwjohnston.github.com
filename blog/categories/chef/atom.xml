@@ -4,7 +4,7 @@
   <title><![CDATA[Category: chef | rooted - a code blog]]></title>
   <link href="http://rootdown.net/blog/categories/chef/atom.xml" rel="self"/>
   <link href="http://rootdown.net/"/>
-  <updated>2012-04-16T14:43:53-06:00</updated>
+  <updated>2012-04-16T16:26:44-06:00</updated>
   <id>http://rootdown.net/</id>
   <author>
     <name><![CDATA[Cameron Johnston]]></name>
@@ -339,6 +339,125 @@ pingdom_check 'bar.example.com http status check' do
 <li>One must look up contact IDs manually when setting <code>contactids</code> in <code>check_params</code></li>
 </ul>
 
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Managing Loggly devices and inputs via Chef]]></title>
+    <link href="http://rootdown.net/blog/2011/12/12/managing-loggly-devices-and-inputs-via-chef/"/>
+    <updated>2011-12-12T15:19:00-07:00</updated>
+    <id>http://rootdown.net/blog/2011/12/12/managing-loggly-devices-and-inputs-via-chef</id>
+    <content type="html"><![CDATA[<h1>Introduction</h1>
+
+<p>Recently I have been experimenting with the logging-as-a-service platform at <a href="http://loggly.com/">Loggly</a>. It seems pretty promising, and there's a free tier for those who are indexing less than 200MB per day.</p>
+
+<p>Since I am using Chef to manage my systems, I decided I would take a crack at writing a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that would allow me to manage devices and inputs on my Loggly account through Chef. This makes it possible for new nodes to register themselves as Loggly devices when they are provisioned, without requiring me to make a trip to the Loggly control panel. The resulting cookbook is available here: <a href="http://github.com/cwjohnston/chef-loggly">http://github.com/cwjohnston/chef-loggly</a></p>
+
+<h1>Requirements</h1>
+
+<ul>
+<li>Valid Loggly account username and password</li>
+<li><code>json</code> ruby gem</li>
+</ul>
+
+
+<h2>Required node attributes</h2>
+
+<ul>
+<li><code>node['loggly']['username']</code> - Your Loggly username.</li>
+<li><code>node['loggly']['password']</code> - Your Loggly password.</li>
+</ul>
+
+
+<p>In the future these attributes should be made optional so that usernames and passwords can be specified as parameters for resource attributes.</p>
+
+<h1>Recipes</h1>
+
+<ul>
+<li><code>default</code> - simply installs the <code>json</code> gem. Chef requires this gem as well, so it should already be available.</li>
+<li><code>rsyslog</code> - creates a loggly input for receiving syslog messages, registers the node as a device on that input and configures rsyslog to forward syslog messages there.</li>
+</ul>
+
+
+<h1>Resources</h1>
+
+<h2><code>loggly_input</code> - manage a log input</h2>
+
+<h3>Attributes</h3>
+
+<ul>
+<li><code>domain</code> - The subdomain for your loggly account</li>
+<li><code>description</code> - An optional descriptor for the input</li>
+<li><code>type</code> - The kind of input to create. May be one of the following:
+
+<ul>
+<li><code>http</code></li>
+<li><code>syslogudp</code></li>
+<li><code>syslogtcp</code></li>
+<li><code>syslog_tls</code></li>
+<li><code>syslogtcp_strip</code></li>
+<li><code>syslogudp_strip</code></li>
+</ul>
+</li>
+</ul>
+
+
+<h3>Actions</h3>
+
+<ul>
+<li><code>create</code> - create the named input (default)</li>
+<li><code>delete</code> - delete the named input</li>
+</ul>
+
+
+<h3>Usage</h3>
+
+<p>``` ruby
+loggly_input "production-syslog" do</p>
+
+<pre><code>domain "examplecorp"
+type "syslogtcp"
+description "syslog messages from production nodes"
+action :create
+</code></pre>
+
+<p>end
+```</p>
+
+<h2><code>loggly_device</code> - manage a device which sends logs to an input</h2>
+
+<p>The name of a <code>loggly_device</code> resource should be the IP address for the device. Loggly doesn't do DNS lookups, it just wants the device's IP.</p>
+
+<h3>Resource Attributes</h3>
+
+<ul>
+<li><code>username</code> - Your Loggly username. if no value is provided for this attribute, the value of <code>node['loggly']['username']</code> will be used.</li>
+<li><code>password</code> - Your Loggly password. if no value is provided for this attribute, the value of <code>node['loggly']['password']</code> will be used.</li>
+<li><code>domain</code> - The subdomain for your loggly account</li>
+<li><code>input</code> - the name of the input this device should be added to</li>
+</ul>
+
+
+<h3>Resource Actions</h3>
+
+<ul>
+<li><code>add</code> - add the device to the named input (default)</li>
+<li><code>delete</code> - remove the device from the named input</li>
+</ul>
+
+
+<h3>Usage</h3>
+
+<p>``` ruby
+loggly_device node[:ipaddress] do</p>
+
+<pre><code>domain "examplecorp"
+input "production-syslog"
+action :add
+</code></pre>
+
+<p>end
+```</p>
 ]]></content>
   </entry>
   
