@@ -6,7 +6,7 @@ sharing: false
 footer: true
 ---
 
-{% img left http://gravatar.com/avatar/55db406e05c361a9267003dc139ba2c0 %}
+{% img right http://gravatar.com/avatar/55db406e05c361a9267003dc139ba2c0 %}
 
 My name is Cameron Johnston, I'm an American Linux systems architect and administrator.
 
