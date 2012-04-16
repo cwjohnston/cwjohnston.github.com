@@ -3,11 +3,11 @@
 # ----------------------- #
 
 url: http://rootdown.net
-title: Cameron Johnston's Blog
-subtitle: In which topics relating to Linux systems administration, Ruby, Opscode Chef, Amazon Web Services, and more are discussed.
+title: rooted
+subtitle:
 author: Cameron Johnston
 simple_search: http://google.com/search
-description:
+description: a blog about Linux, Chef and other related topics
 # Gravatar plugin
 gravatar_hash: 55db406e05c361a9267003dc139ba2c0
 
@@ -35,6 +35,7 @@ destination: public
 plugins: plugins
 code_dir: downloads/code
 category_dir: blog/categories
+category_title_prefix: "Category: "
 markdown: rdiscount
 pygments: false # default python pygments have been replaced by pygments.rb
 
