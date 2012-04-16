@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[rooted - a code blog]]></title>
-  <link href="http://rootdown.net/atom.xml" rel="self"/>
-  <link href="http://rootdown.net/"/>
-  <updated>2012-04-16T11:51:53-06:00</updated>
-  <id>http://rootdown.net/</id>
+  <link href="http://cwjohnston.github.com/atom.xml" rel="self"/>
+  <link href="http://cwjohnston.github.com/"/>
+  <updated>2012-04-16T12:30:42-06:00</updated>
+  <id>http://cwjohnston.github.com/</id>
   <author>
     <name><![CDATA[Cameron Johnston]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Adding resource_tag LWRP to the aws cookbook]]></title>
-    <link href="http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/"/>
+    <link href="http://cwjohnston.github.com/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/"/>
     <updated>2012-04-14T15:08:00-06:00</updated>
-    <id>http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook</id>
+    <id>http://cwjohnston.github.com/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook</id>
     <content type="html"><![CDATA[<p>This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since Opscode already publishes an <code>aws</code> cookbook with providers for other AWS resources, I figured it would be worthwhile to create a provider for manipulating these tags and contribute it back upstream.</p>
 
 <p>The result of this Saturday project is the <code>resource_tag</code> LWRP. Source available <a href="https://github.com/cwjohnston/chef-opscode-aws/commit/fac8434abc380a903397be2605c48919fd128e6f">here</a>, Opscode ticket <a href="http://tickets.opscode.com/browse/COOK-1195">here</a>.</p>
@@ -94,9 +94,9 @@
   
   <entry>
     <title type="html"><![CDATA[Campfire sing-a-longs with Chef]]></title>
-    <link href="http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef/"/>
+    <link href="http://cwjohnston.github.com/blog/2012/04/12/campfire-sing-a-longs-with-chef/"/>
     <updated>2012-04-12T22:01:00-06:00</updated>
-    <id>http://rootdown.net/blog/2012/04/12/campfire-sing-a-longs-with-chef</id>
+    <id>http://cwjohnston.github.com/blog/2012/04/12/campfire-sing-a-longs-with-chef</id>
     <content type="html"><![CDATA[<p>Like many small teams, Needle uses <a href="http://www.campfirenow.com">37signals&#8217; Campfire</a> chat platform for collaborating online. Along with messages exchanged between coworkers, we also use Campfire for announcing new git commits, jira tickets and successful application deployments.</p>
 
 <p>Since the code I&#8217;ve been using to send messages from Chef recipes to Campfire is virtually identical between a number of our cookbooks, I decided to turn that code into a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that anyone can use in their own recipes. The cookbook for this LWRP is <a href="http://github.com/cwjohnston/chef-campfire">available on github</a>.</p>
@@ -152,9 +152,9 @@
   
   <entry>
     <title type="html"><![CDATA[Using deploy_wrapper to set the stage for deployments via Chef]]></title>
-    <link href="http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper/"/>
+    <link href="http://cwjohnston.github.com/blog/2012/04/10/introducing-deploy-wrapper/"/>
     <updated>2012-04-10T13:25:00-06:00</updated>
-    <id>http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper</id>
+    <id>http://cwjohnston.github.com/blog/2012/04/10/introducing-deploy-wrapper</id>
     <content type="html"><![CDATA[<p>Chef&#8217;s <code>deploy</code> and <code>deploy_revision</code> resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, without depending on an external system (e.g. Capistrano.) Many Chef users learning to use these resources for the first time will find that they also need to install an SSH deploy key and an SSH wrapper script for Git before they can make effective use of these deploy resources, and that the Chef wiki doesn&#8217;t provide much documentation around this issue.</p>
 
 <p>Enter <a href="http://github.com/cwjohnston/chef-deploy_wrapper"><code>deploy_wrapper</code></a>: a Chef definition which handles the installation of an SSH deploy key and SSH wrapper script to be used by a <code>deploy</code> or <code>deploy_revision</code> resource.</p>
