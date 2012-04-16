@@ -3,7 +3,7 @@ layout: post
 title: "Campfire sing-a-longs with Chef"
 date: 2012-04-12 22:01
 comments: true
-categories: chef, lwrp, campfire
+categories: chef lwrp campfire
 ---
 
 Like many small teams, Needle uses [37signals' Campfire](http://www.campfirenow.com) chat platform for collaborating online. Along with messages exchanged between coworkers, we also use Campfire for announcing new git commits, jira tickets and successful application deployments.

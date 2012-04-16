@@ -3,7 +3,7 @@ layout: post
 title: "Adding resource_tag LWRP to the aws cookbook"
 date: 2012-04-14 15:08
 comments: true
-categories: chef, lwrp, aws
+categories: chef lwrp aws
 ---
 
 This weekend I decided that I'd had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since Opscode already publishes an `aws` cookbook with providers for other AWS resources, I figured it would be worthwhile to create a provider for manipulating these tags and contribute it back upstream.
