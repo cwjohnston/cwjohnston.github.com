@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: deploy_wrapper | rooted - a code blog]]></title>
-  <link href="http://cwjohnston.github.com/blog/categories/deploy-wrapper/atom.xml" rel="self"/>
-  <link href="http://cwjohnston.github.com/"/>
-  <updated>2012-04-16T12:30:42-06:00</updated>
-  <id>http://cwjohnston.github.com/</id>
+  <link href="http://rootdown.net/blog/categories/deploy-wrapper/atom.xml" rel="self"/>
+  <link href="http://rootdown.net/"/>
+  <updated>2012-04-16T13:02:59-06:00</updated>
+  <id>http://rootdown.net/</id>
   <author>
     <name><![CDATA[Cameron Johnston]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Using deploy_wrapper to set the stage for deployments via Chef]]></title>
-    <link href="http://cwjohnston.github.com/blog/2012/04/10/introducing-deploy-wrapper/"/>
+    <link href="http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper/"/>
     <updated>2012-04-10T13:25:00-06:00</updated>
-    <id>http://cwjohnston.github.com/blog/2012/04/10/introducing-deploy-wrapper</id>
+    <id>http://rootdown.net/blog/2012/04/10/introducing-deploy-wrapper</id>
     <content type="html"><![CDATA[<p>Chef's <code>deploy</code> and <code>deploy_revision</code> resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, without depending on an external system (e.g. Capistrano.) Many Chef users learning to use these resources for the first time will find that they also need to install an SSH deploy key and an SSH wrapper script for Git before they can make effective use of these deploy resources, and that the Chef wiki doesn't provide much documentation around this issue.</p>
 
 <p>Enter <a href="http://github.com/cwjohnston/chef-deploy_wrapper"><code>deploy_wrapper</code></a>: a Chef definition which handles the installation of an SSH deploy key and SSH wrapper script to be used by a <code>deploy</code> or <code>deploy_revision</code> resource.</p>
