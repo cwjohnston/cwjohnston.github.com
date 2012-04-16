@@ -4,7 +4,7 @@
   <title><![CDATA[rooted - a code blog]]></title>
   <link href="http://rootdown.net/atom.xml" rel="self"/>
   <link href="http://rootdown.net/"/>
-  <updated>2012-04-16T13:02:59-06:00</updated>
+  <updated>2012-04-16T14:43:53-06:00</updated>
   <id>http://rootdown.net/</id>
   <author>
     <name><![CDATA[Cameron Johnston]]></name>
@@ -288,6 +288,142 @@
 <p>The <code>sloppy</code> parameter is the only optional one. Because the default configuration of most most ssh installations is to require manual verification when accepting a remote host&#8217;s key for the first time, the <code>sloppy</code> parameter allows one to toggle key checking (<code>StrictHostKeyChecking</code>) on or off.</p>
 
 <p>When the value for <code>sloppy</code> is <code>true</code>, the wrapper script will accept any host key without prompting. The default value for <code>sloppy</code> is <code>false</code>, meaning that additional Chef resources, or &#8230; <em>*gasp*</em> &#8230; manual intervention, will be required in order to set up a <code>known_hosts</code> file before deployments can run successfully.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Managing Pingdom service checks with Chef]]></title>
+    <link href="http://rootdown.net/blog/2012/03/16/managing-pingdom-service-checks-with-chef/"/>
+    <updated>2012-03-16T14:08:00-06:00</updated>
+    <id>http://rootdown.net/blog/2012/03/16/managing-pingdom-service-checks-with-chef</id>
+    <content type="html"><![CDATA[<h2>Monitoring with Pingdom</h2>
+
+<p>Swedish firm <a href="http://pingdom.com/">Pingdom</a> offers a flexible, affordable service for monitoring the availability and response time of web sites, applications and other services. At Needle we provision an instance of our chat server for each partner we work with, and as a result I&#8217;ve found myself creating a Pingdom service check to monitor each of these instances. As you might imagine, this is a rather repetitive task, and the configuration is basically the same for each service check &#8211; a process ripe for automation!</p>
+
+<p>Thankfully Pingdom provides a <a href="http://www.pingdom.com/services/api/">REST API</a> for interacting with the service programatically, which has made it possible for me to write a Chef LWRP for creating and modifying Pingdom service checks. Source available here: <a href="http://github.com/cwjohnston/chef-pingdom">http://github.com/cwjohnston/chef-pingdom</a></p>
+
+<h2>Requirements</h2>
+
+<p>Requires Chef 0.7.10 or higher for Lightweight Resource and Provider support. Chef 0.10+ is recommended as this cookbook has not been tested with earlier versions.</p>
+
+<p>A valid username, password and API key for your Pingdom account is required.</p>
+
+<h2>Recipes</h2>
+
+<p>This cookbook provides an empty default recipe which installs the required <code>json</code> gem (verison &lt;=1.6.1). Chef already requires this gem, so it&#8217;s really just included in the interests of completeness.</p>
+
+<h2>Libraries</h2>
+
+<p>This cookbook provides the <code>Opscode::Pingdom::Check</code> library module which is required by all the check providers.</p>
+
+<h2>Resources and Providers</h2>
+
+<p>This cookbook provides a single resource (<code>pingdom_check</code>) and corresponding provider for managing Pingdom service checks.</p>
+
+<p><code>pingdom_check</code> resources support the actions <code>add</code> and <code>delete</code>, <code>add</code> being the default. Each <code>pingdom_check</code> resource requires the following resource attributes:</p>
+
+<ul>
+<li><code>host</code> - indicates the hostname (or IP address) which the service check will target</li>
+<li><code>api_key</code> - a valid API key for your Pingdom account</li>
+<li><code>username</code> - your Pingdom username</li>
+<li><code>password</code> - your Pingdom password</li>
+</ul>
+
+
+<p><code>pingdom_check</code> resources may also specifiy values for the optional <code>type</code> and <code>check_params</code> attributes.</p>
+
+<p>The <code>type</code> attribute will accept one of the following service check types. If no value is specified, the check type will default to <code>http</code>.</p>
+
+<ul>
+<li>http</li>
+<li>tcp</li>
+<li>udp</li>
+<li>ping</li>
+<li>dns</li>
+<li>smtp</li>
+<li>pop3</li>
+<li>imap</li>
+</ul>
+
+
+<p>The optional <code>check_params</code> attribute is expected to be a hash containing key/value pairs which match the type-specific parameters defined by the <a href="http://www.pingdom.com/services/api-documentation-rest/#ResourceChecks">Pingdom API</a>. If no attributes are provided for <code>check_params</code>, the default values for type-specific defaults will be used.</p>
+
+<h2>Usage</h2>
+
+<p>In order to utilize this cookbook, put the following at the top of the recipe where Pingdom resources are used:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;pingdom&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The following resource would configure a HTTP service check for the host <code>foo.example.com</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">pingdom_check</span> <span class="s1">&#39;foo http check&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">host</span> <span class="s1">&#39;foo.example.com&#39;</span><span class="n">A</span>
+</span><span class='line'>  <span class="n">api_key</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:api_key</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">username</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:username</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">password</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:password</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The resulting HTTP service check would be created using all the Pingdom defaults for HTTP service checks.</p>
+
+<p>The following resource would configure an HTTP service check for the host <code>bar.example.com</code> utilizing some of the parameters specific to the HTTP service check type:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">pingdom_check</span> <span class="s1">&#39;bar.example.com http status check&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">host</span> <span class="s1">&#39;bar.example.com&#39;</span>
+</span><span class='line'>  <span class="n">api_key</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:api_key</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">username</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:username</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">password</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:password</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">check_params</span> <span class="ss">:url</span> <span class="o">=&gt;</span> <span class="s2">&quot;/status&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="ss">:shouldcontain</span> <span class="o">=&gt;</span> <span class="s2">&quot;Everything is OK!&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="ss">:sendnotificationwhendown</span> <span class="o">=&gt;</span> <span class="mi">2</span><span class="p">,</span>
+</span><span class='line'>               <span class="ss">:sendtoemail</span> <span class="o">=&gt;</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
+</span><span class='line'>               <span class="ss">:sendtoiphone</span> <span class="o">=&gt;</span> <span class="s2">&quot;true&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Caveats</h2>
+
+<p>At this time I consider the LWRP to be incomplete. The two major gaps are as follows:</p>
+
+<ul>
+<li>Changing the values for <code>check_params</code> does not actually update the service check&#8217;s configuration. I have done most of the initial work to implement this (available in the <code>check-updating</code> branch on github), but there are still bugs.</li>
+<li>The LWRP has no support for managing contacts.</li>
+</ul>
+
+
+<h2>Future</h2>
+
+<ul>
+<li>Add <code>update</code> action for service checks which modifies existing checks to match the values from <code>check_params</code></li>
+<li>Add <code>enable</code> and <code>disable</code> actions for service checks</li>
+<li>Add support for managing contacts (<code>pingdom_contact</code> resource)</li>
+<li>Convert <code>TrueClass</code> attribute values to <code>"true"</code> strings</li>
+<li>Validate classes passed as <code>check_params</code> values</li>
+<li>One must look up contact IDs manually when setting <code>contactids</code> in <code>check_params</code></li>
+</ul>
+
 ]]></content>
   </entry>
   
