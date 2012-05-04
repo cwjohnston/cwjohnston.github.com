@@ -4,7 +4,7 @@
   <title><![CDATA[rooted - a code blog]]></title>
   <link href="http://rootdown.net/atom.xml" rel="self"/>
   <link href="http://rootdown.net/"/>
-  <updated>2012-04-16T16:26:44-06:00</updated>
+  <updated>2012-05-04T15:13:07-06:00</updated>
   <id>http://rootdown.net/</id>
   <author>
     <name><![CDATA[Cameron Johnston]]></name>
@@ -12,6 +12,62 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[HipChat LWRP for Chef]]></title>
+    <link href="http://rootdown.net/blog/2012/05/04/hipchat-lwrp-for-chef/"/>
+    <updated>2012-05-04T12:22:00-06:00</updated>
+    <id>http://rootdown.net/blog/2012/05/04/hipchat-lwrp-for-chef</id>
+    <content type="html"><![CDATA[<p>Since releasing a Campfire LWRP for Chef a few weeks ago, my team has evaluated
+and subsequently transitioned to <a href="http://www.hipchat.com">Atlassian&#8217;s HipChat service</a>.
+Luckily I was able to reuse the framework I had already created for Campfire as the
+basis for a HipChat LWRP.</p>
+
+<p>The LWRP should work with any modern version of Chef. When you use <code>include_recipe</code>
+to access the LWRP in your own recipes, the default recipe for this cookbook will install
+the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; gem</a>.</p>
+
+<h2>Attributes</h2>
+
+<ul>
+<li><code>room</code> - the name of the room you would like to speak into (requied).</li>
+<li><code>token</code> - authentication token for your HipChat account (required).</li>
+<li><code>nickname</code> - the nickname to be used when speaking the message (required).</li>
+<li><code>message</code> - the message to speak. If a message is not specified, the name of the <code>hipchat_msg</code> resource is used.</li>
+<li><code>notify</code> - toggles whether or not users in the room should be notified by this message (defaults to true).</li>
+<li><code>color</code> - sets the color of the message in HipChat. Supported colors include: yellow, red, green, purple, or random (defaults to yellow).</li>
+<li><code>failure_ok</code> - toggles whether or not to catch the exception if an error is encountered connecting to HipChat (defaults to true).</li>
+</ul>
+
+
+<h2>Usage example</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;hipchat&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">hipchat_msg</span> <span class="s1">&#39;bad news&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">room</span> <span class="s1">&#39;The Pod Bay&#39;</span>
+</span><span class='line'>  <span class="n">token</span> <span class="s1">&#39;0xdedbeef0xdedbeef0xdedbeef&#39;</span>
+</span><span class='line'>  <span class="n">nickname</span> <span class="s1">&#39;HAL9000&#39;</span>
+</span><span class='line'>  <span class="n">message</span> <span class="s2">&quot;Sorry Dave, I&#39;m afraid I can&#39;t do that: </span><span class="si">#{</span><span class="n">some_error</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="n">color</span> <span class="s1">&#39;red&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Availability</h2>
+
+<p>You can find this cookbook <a href="http://www.github.com/cwjohnston/chef-hipchat">on github</a> or on the <a href="http://community.opscode.com/cookbooks/hipchat">Opscode community site</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Adding resource_tag LWRP to the aws cookbook]]></title>
@@ -548,6 +604,8 @@
 </span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
+
+<p><strong>UPDATE:</strong> as of lately (spring 2012) I am not actively using Loggly, so I am not actively improving this code. Please let me know if you are interested in updating it or taking over the project.</p>
 ]]></content>
   </entry>
   

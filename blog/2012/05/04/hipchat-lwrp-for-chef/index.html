@@ -5,13 +5,12 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Blog Archive - rooted - a code blog</title>
+  <title>HipChat LWRP for Chef - rooted - a code blog</title>
   <meta name="author" content="Cameron Johnston">
 
   
-  <meta name="description" content="Blog Archive 2012 HipChat LWRP for Chef
-May 04 2012 posted in chef, hipchat, lwrp Adding resource_tag LWRP to the aws cookbook
-Apr 14 2012 posted in &hellip;">
+  <meta name="description" content="Since releasing a Campfire LWRP for Chef a few weeks ago, my team has evaluated
+and subsequently transitioned to Atlassian&#8217;s HipChat service. &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +19,7 @@ Apr 14 2012 posted in &hellip;">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rootdown.net/blog/archives">
+  <link rel="canonical" href="http://rootdown.net/blog/2012/05/04/hipchat-lwrp-for-chef">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/bootstrap/bootstrap.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/bootstrap/responsive.css" media="screen, projection" rel="stylesheet" type="text/css">
@@ -99,119 +98,142 @@ Apr 14 2012 posted in &hellip;">
   <div class="container">
     <div class="row-fluid">
       
-<article role="article" class="span9">
+<article class="hentry span9" role="article">
 
   
   <header class="page-header">
-    <h1 class="entry-title">Blog Archive</h1>
+    
+      <h1 class="entry-title">HipChat LWRP for Chef</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-05-04T12:22:00-06:00" pubdate data-updated="true">May 4<span>th</span>, 2012</time>
+        
+      </p>
     
   </header>
+
+
+<div class="entry-content"><p>Since releasing a Campfire LWRP for Chef a few weeks ago, my team has evaluated
+and subsequently transitioned to <a href="http://www.hipchat.com">Atlassian&#8217;s HipChat service</a>.
+Luckily I was able to reuse the framework I had already created for Campfire as the
+basis for a HipChat LWRP.</p>
+
+<p>The LWRP should work with any modern version of Chef. When you use <code>include_recipe</code>
+to access the LWRP in your own recipes, the default recipe for this cookbook will install
+the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; gem</a>.</p>
+
+<h2>Attributes</h2>
+
+<ul>
+<li><code>room</code> - the name of the room you would like to speak into (requied).</li>
+<li><code>token</code> - authentication token for your HipChat account (required).</li>
+<li><code>nickname</code> - the nickname to be used when speaking the message (required).</li>
+<li><code>message</code> - the message to speak. If a message is not specified, the name of the <code>hipchat_msg</code> resource is used.</li>
+<li><code>notify</code> - toggles whether or not users in the room should be notified by this message (defaults to true).</li>
+<li><code>color</code> - sets the color of the message in HipChat. Supported colors include: yellow, red, green, purple, or random (defaults to yellow).</li>
+<li><code>failure_ok</code> - toggles whether or not to catch the exception if an error is encountered connecting to HipChat (defaults to true).</li>
+</ul>
+
+
+<h2>Usage example</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;hipchat&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">hipchat_msg</span> <span class="s1">&#39;bad news&#39;</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">room</span> <span class="s1">&#39;The Pod Bay&#39;</span>
+</span><span class='line'>  <span class="n">token</span> <span class="s1">&#39;0xdedbeef0xdedbeef0xdedbeef&#39;</span>
+</span><span class='line'>  <span class="n">nickname</span> <span class="s1">&#39;HAL9000&#39;</span>
+</span><span class='line'>  <span class="n">message</span> <span class="s2">&quot;Sorry Dave, I&#39;m afraid I can&#39;t do that: </span><span class="si">#{</span><span class="n">some_error</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="n">color</span> <span class="s1">&#39;red&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Availability</h2>
+
+<p>You can find this cookbook <a href="http://www.github.com/cwjohnston/chef-hipchat">on github</a> or on the <a href="http://community.opscode.com/cookbooks/hipchat">Opscode community site</a>.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
   
-  
 
+<span class="byline author vcard">Posted by <span class="fn">Cameron Johnston</span></span>
 
-  
-  <h1>2012</h1>
-
-<article>
-  <div class="well">
-
-<h2><a href="/blog/2012/05/04/hipchat-lwrp-for-chef/">HipChat LWRP for Chef</a></h2>
-<time datetime="2012-05-04T12:22:00-06:00" pubdate><span class='month'>May</span> <span class='day'>04</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/hipchat/'>hipchat</a>, <a class='category' href='/blog/categories/lwrp/'>lwrp</a></span>
-</footer>
-
-</div>
-
-</article>
+      
 
 
 
-<article>
-  <div class="well">
-
-<h2><a href="/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/">Adding resource_tag LWRP to the aws cookbook</a></h2>
-<time datetime="2012-04-14T15:08:00-06:00" pubdate><span class='month'>Apr</span> <span class='day'>14</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/aws/'>aws</a>, <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/lwrp/'>lwrp</a></span>
-</footer>
-
-</div>
-
-</article>
 
 
-
-<article>
-  <div class="well">
-
-<h2><a href="/blog/2012/04/12/campfire-sing-a-longs-with-chef/">Campfire sing-a-longs with Chef</a></h2>
-<time datetime="2012-04-12T22:01:00-06:00" pubdate><span class='month'>Apr</span> <span class='day'>12</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/campfire/'>campfire</a>, <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/lwrp/'>lwrp</a></span>
-</footer>
-
-</div>
-
-</article>
-
-
-
-<article>
-  <div class="well">
-
-<h2><a href="/blog/2012/04/10/introducing-deploy-wrapper/">Using deploy_wrapper to set the stage for deployments via Chef</a></h2>
-<time datetime="2012-04-10T13:25:00-06:00" pubdate><span class='month'>Apr</span> <span class='day'>10</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/deploy-wrapper/'>deploy_wrapper</a></span>
-</footer>
-
-</div>
-
-</article>
-
-
-
-<article>
-  <div class="well">
-
-<h2><a href="/blog/2012/03/16/managing-pingdom-service-checks-with-chef/">Managing Pingdom service checks with Chef</a></h2>
-<time datetime="2012-03-16T14:08:00-06:00" pubdate><span class='month'>Mar</span> <span class='day'>16</span> <span class='year'>2012</span></time>
-
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/monitoring/'>monitoring</a>, <a class='category' href='/blog/categories/pingdom/'>pingdom</a></span>
-</footer>
-
-</div>
-
-</article>
 
 
 
   
-  <h1>2011</h1>
 
-<article>
-  <div class="well">
 
-<h2><a href="/blog/2011/12/12/managing-loggly-devices-and-inputs-via-chef/">Managing Loggly devices and inputs via Chef</a></h2>
-<time datetime="2011-12-12T15:19:00-07:00" pubdate><span class='month'>Dec</span> <span class='day'>12</span> <span class='year'>2011</span></time>
+<time datetime="2012-05-04T12:22:00-06:00" pubdate data-updated="true">May 4<span>th</span>, 2012</time>
+      
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/logging/'>logging</a>, <a class='category' href='/blog/categories/lwrp/'>lwrp</a></span>
-</footer>
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/hipchat/'>hipchat</a>, <a class='category' href='/blog/categories/lwrp/'>lwrp</a>
+  
+</span>
 
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rootdown.net/blog/2012/05/04/hipchat-lwrp-for-chef/" data-via="cwjohnston" data-counturl="http://rootdown.net/blog/2012/05/04/hipchat-lwrp-for-chef/" >Tweet</a>
+  
+  
+  
 </div>
 
-</article>
-
-
-  
+    
+    
+    <section>
+      <h1>Comments</h1>
+      <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+    </section>
+    
+    <ul class="pager">
+      
+      <li class="previous"><a class="basic-alignment left"
+        href="/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/" title="Previous Post:
+        Adding resource_tag LWRP to the aws cookbook">&laquo; Adding resource_tag LWRP to the aws cookbook</a></li>
+      
+      <li><a href="/blog/archives">Blog Archives</a></li>
+      
+    </ul>
+  </footer>
 </article>
 
 <aside class="sidebar-nav span3">
@@ -335,7 +357,10 @@ Apr 14 2012 posted in &hellip;">
       var disqus_shortname = 'rootdowndotnet';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rootdown.net/blog/2012/05/04/hipchat-lwrp-for-chef/';
+        var disqus_url = 'http://rootdown.net/blog/2012/05/04/hipchat-lwrp-for-chef/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
