@@ -6,6 +6,8 @@ comments: true
 categories: aws cloudformation ruby
 ---
 
+*This article was originally published as part of the 2014 [AWS Advent series](http://awsadvent.tumblr.com/).*
+
 ## Introduction
 This article assumes some familiarity with CloudFormation concepts such as stack parameters, resources,
 mappings and outputs. See the [AWS Advent CloudFormation Primer](http://awsadvent.tumblr.com/post/37391299521/cloudformation-primer) for an introduction.
