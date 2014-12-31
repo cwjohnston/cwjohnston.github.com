@@ -10,19 +10,19 @@ categories: chef handlers sensu
 
 I have a lot of warm feelings for [Sensu](http://www.sensuapp.org/), a flexible, scalable open source monitoring framework. At [Needle](http://www.needle.com) our team has used Chef to build a Sensu instance for each of our environments, allowing us to test our automated monitoring configuration before promoting it to production, just like any other code we deploy.
 
-Speaking of deploying code, isn't it obnoxious to see alerts from your monitoring system when you know that your CM tool or deploy method is running? We think so too, so I set about writing a [Chef handler]() to
+Speaking of deploying code, isn't it obnoxious to see alerts from your monitoring system when you know that your CM tool or deploy method is running? We think so too, so I set about writing a [Chef handler](https://docs.chef.io/handlers.html) to take care of this annoyance.
 
 # Sensu API and Stashes
 
-Among Sensu's virtues is its [RESTful API](http://docs.sensuapp.org/0.10/api) which provides access to the data Sensu servers collect, such as clients & events.
+Among Sensu's virtues is its [RESTful API](http://sensuapp.org/docs/0.11/api) which provides access to the data Sensu servers collect, such as clients & events.
 
-The API also exposes an interface to [stashes](http://docs.sensuapp.org/0.10/api/stashes.html). Stashes are arbitrary JSON documents, so any JSON formatted data can be stored under the `/stashes` API endpoint.
+The API also exposes an interface to [stashes](http://sensuapp.org/docs/0.11/api-stashes). Stashes are arbitrary JSON documents, so any JSON formatted data can be stored under the `/stashes` API endpoint.
 
 Sensu handlers are expected to check the stashes under the `/stashes/silence` path when processing events, and silence events whose client has a matching stash at `/stashes/silence/$CLIENT` or whose client and check match a stash at `/stashes/silence/$CLIENT/$CHECK`.
 
 # Chef
 
-Chef's [handler](http://docs.opscode.com/essentials_handlers.html) functionality can be used to trigger certain behaviors in response to specific situations during a chef-client run. At this time there are three different handler types implemented by `Chef::Handler`:
+Chef's handler functionality can be used to trigger certain behaviors in response to specific situations during a chef-client run. At this time there are three different handler types implemented by `Chef::Handler`:
 
 * start handlers, triggered when the defined aspect of a chef-run starts
 * exception handlers, triggered when the defined aspect of a chef-run fails
