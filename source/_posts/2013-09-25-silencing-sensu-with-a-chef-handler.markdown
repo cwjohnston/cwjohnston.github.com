@@ -3,7 +3,7 @@ layout: post
 title: "Silencing Sensu with a Chef Handler"
 date: 2013-09-25 10:43
 comments: true
-categories: chef handlers sensu
+categories: chef sensu
 ---
 
 # Introduction
