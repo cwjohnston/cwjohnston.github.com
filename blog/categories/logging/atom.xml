@@ -4,7 +4,7 @@
   <title><![CDATA[Category: logging | rooted - a code blog]]></title>
   <link href="http://rootdown.net/blog/categories/logging/atom.xml" rel="self"/>
   <link href="http://rootdown.net/"/>
-  <updated>2012-05-04T15:13:07-06:00</updated>
+  <updated>2014-12-31T10:29:50-07:00</updated>
   <id>http://rootdown.net/</id>
   <author>
     <name><![CDATA[Cameron Johnston]]></name>
@@ -129,8 +129,6 @@ action :add
 
 <p>end
 ```</p>
-
-<p><strong>UPDATE:</strong> as of lately (spring 2012) I am not actively using Loggly, so I am not actively improving this code. Please let me know if you are interested in updating it or taking over the project.</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[rooted - a code blog]]></title>
   <link href="http://rootdown.net/atom.xml" rel="self"/>
   <link href="http://rootdown.net/"/>
-  <updated>2012-05-04T15:13:07-06:00</updated>
+  <updated>2014-12-31T10:29:50-07:00</updated>
   <id>http://rootdown.net/</id>
   <author>
     <name><![CDATA[Cameron Johnston]]></name>
@@ -12,6 +12,912 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[SparkleFormation: Build infrastructure with CloudFormation without losing your sanity.]]></title>
+    <link href="http://rootdown.net/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity/"/>
+    <updated>2014-12-31T10:20:00-07:00</updated>
+    <id>http://rootdown.net/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity</id>
+    <content type="html"><![CDATA[<p><em>This article was originally published as part of the 2014 <a href="http://awsadvent.tumblr.com/">AWS Advent series</a>.</em></p>
+
+<h2>Introduction</h2>
+
+<p>This article assumes some familiarity with CloudFormation concepts such as stack parameters, resources,
+mappings and outputs. See the <a href="http://awsadvent.tumblr.com/post/37391299521/cloudformation-primer">AWS Advent CloudFormation Primer</a> for an introduction.</p>
+
+<p>Although CloudFormation templates are billed as reusable, many users will attest that as these
+monolithic JSON documents grow larger, they become <a href="http://www.unixdaemon.net/cloud/the-four-stages-of-cloudformation.html">&#8220;all encompassing JSON file[s] of darkness,&#8221;</a>
+and actually reusing code between templates becomes a frustrating copypasta exercise.</p>
+
+<p>From another perspective these JSON documents are actually just hashes, and with a minimal DSL we
+can build these hashes programmatically. <a href="https://github.com/sparkleformation/sparkle_formation/">SparkleFormation</a> provides a Ruby DSL for merging
+and compiling hashes into CFN templates, and helpers which invoke CloudFormation&#8217;s <a href="http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/intrinsic-function-reference.html">intrinsic functions</a>
+(e.g. Ref, Attr, Join, Map).</p>
+
+<p>SparkleFormation&#8217;s DSL implementation is intentionally loose, imposing little of its own
+opinion on how your template should be constructed. Provided you are already familiar with
+CloudFormation template concepts and some minimal ammount of Ruby, the rest is merging hashes.</p>
+
+<h2>Templates</h2>
+
+<p>Just as with CloudFormation, the template is the high-level object. In SparkleFormation we instantiate a new template
+like so:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:foo</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>But an empty template isn&#8217;t going to help us much, so let&#8217;s step into it and at least insert the required
+<code>AWSTemplateFormatVersion</code> specification:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:foo</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">_set</span><span class="p">(</span><span class="s1">&#39;AWSTemplateFormatVersion&#39;</span><span class="p">,</span> <span class="s1">&#39;2010-09-09&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the above case we use the <code>_set</code> helper method because we are setting a top-level key with a string value.
+When we are working with hashes we can use a block syntax, as shown here adding a parameter to the top-level
+<code>Parameters</code> hash that CloudFormation expects:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:foo</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">_set</span><span class="p">(</span><span class="s1">&#39;AWSTemplateFormatVersion&#39;</span><span class="p">,</span> <span class="s1">&#39;2010-09-09&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">parameters</span><span class="p">(</span><span class="ss">:food</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>    <span class="n">description</span> <span class="s1">&#39;what do you want to eat?&#39;</span>
+</span><span class='line'>    <span class="n">allowed_values</span> <span class="sx">%w( tacos nachos hotdogs )</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Reusability</h2>
+
+<p>SparkleFormation provides primatives to help you build templates out of reusable code, namely:</p>
+
+<ul>
+<li>Components</li>
+<li>Dynamics</li>
+<li>Registries</li>
+</ul>
+
+
+<h3>Components</h3>
+
+<p>Here&#8217;s a component we&#8217;ll name <code>environment</code> which defines our allowed environment parameter values:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">build</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">_set</span><span class="p">(</span><span class="s1">&#39;AWSTemplateFormatVersion&#39;</span><span class="p">,</span> <span class="s1">&#39;2010-09-09&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">parameters</span><span class="p">(</span><span class="ss">:environment</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>    <span class="n">default</span> <span class="s1">&#39;test&#39;</span>
+</span><span class='line'>    <span class="n">allowed_values</span> <span class="sx">%w( test staging production )</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Resources, parameters and other CloudFormation configuration written into a SparkleFormation component are statically
+inserted into any templates using the <code>load</code> method. Now all our stack templates can reuse the same component so
+updating the list of environments across our entire infrastructure becomes a snap. Once a template has loaded a
+component, it can then step into the configuration provided by the component to make modifications.</p>
+
+<p>In this template example we load the <code>environment</code> component (above) and override the allowed values for the environment
+parameter the component provides:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:perpetual_beta</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="ss">:environment</span><span class="p">)</span><span class="o">.</span><span class="n">overrides</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">parameters</span><span class="p">(</span><span class="ss">:environment</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">allowed_values</span> <span class="sx">%w( test staging )</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Dynamics</h3>
+
+<p>Where as components are loaded once at the instantiation of a SparkleFormation template, dynamics are inserted one or
+more times throughout a template. They iteratively generate unique resources based on the name and optional
+configuration they are passed when inserted.</p>
+
+<p>In this example we insert a <code>launch_config</code> dynamic and pass it a config object containing a run list:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;zookeeper&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="ss">:base</span><span class="p">)</span><span class="o">.</span><span class="n">overrides</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">dynamic!</span><span class="p">(</span><span class="ss">:launch_config</span><span class="p">,</span> <span class="s1">&#39;zookeeper&#39;</span><span class="p">,</span> <span class="ss">:run_list</span> <span class="o">=&gt;</span> <span class="o">[</span><span class="s1">&#39;role[zookeeperd]&#39;</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>launch_config</code> dynamic (not pictured) can then use intrisic functions like <code>Fn::Join</code> to insert data passed in the config deep inside a launch
+configuration, as in this case where we want our template to tell Chef what our run list should be.</p>
+
+<h3>Registries</h3>
+
+<p>Similar to dynamics, a registry entry can be inserted at any point in a SparkleFormation template or dynamic. e.g. a
+registry entry can be used to share the same metadata between both AWS::AutoScaling::LaunchConfiguration and
+AWS::EC2::Instance resources.</p>
+
+<h2>Translating a ghost of AWS Advent past</h2>
+
+<p>This JSON template from a previous AWS Advent article provisions a single EC2 instance into an
+existing VPC subnet and security group:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;AWSTemplateFormatVersion&quot;</span> <span class="o">:</span> <span class="s2">&quot;2010-09-09&quot;</span><span class="p">,</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;make an instance, based on region, ami, subnet, and security group&quot;</span><span class="p">,</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="s2">&quot;Parameters&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="s2">&quot;KeyName&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;Name of an existing EC2 KeyPair to enable SSH access to the instance&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;Type&quot;</span> <span class="o">:</span> <span class="s2">&quot;String&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="s2">&quot;VpcId&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Type&quot;</span> <span class="o">:</span> <span class="s2">&quot;String&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;VpcId of your existing Virtual Private Cloud (VPC)&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="s2">&quot;SubnetId&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Type&quot;</span> <span class="o">:</span> <span class="s2">&quot;String&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;SubnetId of an existing subnet in your Virtual Private Cloud (VPC)&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="s2">&quot;AmiId&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Type&quot;</span> <span class="o">:</span> <span class="s2">&quot;String&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;AMI to use&quot;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="s2">&quot;SecurityGroupId&quot;</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Type&quot;</span> <span class="o">:</span> <span class="s2">&quot;String&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;SecurityGroup to use&quot;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="s2">&quot;Resources&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="s2">&quot;Ec2Instance&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Type&quot;</span> <span class="o">:</span> <span class="s2">&quot;AWS::EC2::Instance&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;Properties&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>                <span class="s2">&quot;ImageId&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;Ref&quot;</span> <span class="o">:</span> <span class="s2">&quot;AmiId&quot;</span> <span class="p">},</span>
+</span><span class='line'>                <span class="s2">&quot;SecurityGroupIds&quot;</span> <span class="o">:</span> <span class="p">[{</span> <span class="s2">&quot;Ref&quot;</span> <span class="o">:</span> <span class="s2">&quot;SecurityGroupId&quot;</span> <span class="p">}],</span>
+</span><span class='line'>                <span class="s2">&quot;SubnetId&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;Ref&quot;</span> <span class="o">:</span> <span class="s2">&quot;SubnetId&quot;</span> <span class="p">},</span>
+</span><span class='line'>                <span class="s2">&quot;KeyName&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;Ref&quot;</span> <span class="o">:</span> <span class="s2">&quot;KeyName&quot;</span> <span class="p">},</span>
+</span><span class='line'>                <span class="s2">&quot;UserData&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;Fn::Base64&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;Fn::Join&quot;</span> <span class="o">:</span>
+</span><span class='line'>                  <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="p">[</span>
+</span><span class='line'>                        <span class="s2">&quot;#!/bin/bash -v\n&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="s2">&quot;curl http://aprivatebucket.s3.amazonaws.com/bootstrap.sh -o /tmp/bootstrap.sh\n&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="s2">&quot;bash /tmp/bootstrap.sh\n&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="s2">&quot;# If all went well, signal success\n&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="s2">&quot;cfn-signal -e $? -r &#39;Chef Server configuration&#39;\n&quot;</span>
+</span><span class='line'>                    <span class="p">]]}}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="s2">&quot;Outputs&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s2">&quot;InstanceId&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Value&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;Ref&quot;</span> <span class="o">:</span> <span class="s2">&quot;Ec2Instance&quot;</span> <span class="p">},</span>
+</span><span class='line'>            <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;Instance Id of newly created instance&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="s2">&quot;Subnet&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Value&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;Ref&quot;</span> <span class="o">:</span> <span class="s2">&quot;SubnetId&quot;</span> <span class="p">},</span>
+</span><span class='line'>            <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;Subnet of instance&quot;</span>
+</span><span class='line'>        <span class="p">},</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="s2">&quot;SecurityGroupId&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;Value&quot;</span> <span class="o">:</span> <span class="p">{</span> <span class="s2">&quot;Ref&quot;</span> <span class="o">:</span> <span class="s2">&quot;SecurityGroupId&quot;</span> <span class="p">},</span>
+</span><span class='line'>            <span class="s2">&quot;Description&quot;</span> <span class="o">:</span> <span class="s2">&quot;Security Group of instance&quot;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Not terrible, but the JSON is a little hard on the eyes. Here&#8217;s the same thing in Ruby,
+using SparkleFormation:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:vpc_instance</span><span class="p">)</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">set!</span><span class="p">(</span><span class="s1">&#39;AWSTemplateFormatVersion&#39;</span> <span class="s1">&#39;2010-09-09&#39;</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">description</span> <span class="s1">&#39;make an instance, based on region, ami, subnet, and security group&#39;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">parameters</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">key_name</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;Name of an existing EC2 KeyPair to enable SSH access to the instance&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">vpc_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;VpcId of your existing Virtual Private Cloud (VPC)&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">subnet_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;SubnetId of an existing subnet in your Virtual Private Cloud (VPC)&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">ami_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;AMI to use&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">security_group_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;SecurityGroup to use&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">resources</span><span class="p">(</span><span class="ss">:ec2_instance</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">type</span> <span class="s1">&#39;AWS::EC2::Instance&#39;</span>
+</span><span class='line'>    <span class="n">properties</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">image_id</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:ami_id</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">security_group_ids</span> <span class="o">[</span><span class="n">ref!</span><span class="p">(</span><span class="ss">:security_group_id</span><span class="p">)</span><span class="o">]</span>
+</span><span class='line'>      <span class="n">subnet_id</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:subnet_id</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">key_name</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:key_name</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">user_data</span> <span class="n">base64!</span><span class="p">(</span>
+</span><span class='line'>        <span class="n">join!</span><span class="p">(</span>
+</span><span class='line'>          <span class="s2">&quot;#!/bin/bash -v</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;curl http://aprivatebucket.s3.amazonaws.com/bootstrap.sh -o /tmp/bootstrap.sh</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;bash /tmp/bootstrap.sh</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;# If all went well, signal success</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;cfn-signal -e $? -r &#39;Chef Server configuration&#39;</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span class='line'>        <span class="p">)</span>
+</span><span class='line'>      <span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">outputs</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">instance_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;Instance Id of newly created instance&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:instance_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">subnet</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;Subnet of instance&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:subnet_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">security_group_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;Security group of instance&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:security_group_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Without taking advantage of any of SparkleFormation&#8217;s special capabilities, this translation is
+already a few lines shorter and easier to read as well. That&#8217;s a good start, but we can do better.</p>
+
+<p>The template format version specification and parameters required for this template are common to any
+stack where EC2 compute resources may be used, whether they be single EC2 instances or
+Auto Scaling Groups, so lets take advantage of some SparkleFormation features to make them reusable.</p>
+
+<p>Here we have a <code>base</code> component that inserts the common parameters into templates which load it:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">build</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">set!</span><span class="p">(</span><span class="s1">&#39;AWSTemplateFormatVersion&#39;</span><span class="p">,</span> <span class="s1">&#39;2010-09-09&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">parameters</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">key_name</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;Name of and existing EC2 KeyPair to enable SSH access to the instance&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">vpc_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;VpcId of your existing Virtual Private Cloud (VPC)&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">subnet_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;SubnetId of an existing subnet in your Virtual Private Cloud (VPC)&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">ami_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;AMI You want to use&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">security_group_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;SecurityGroup to use&#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">outputs</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">subnet</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;Subnet of instance&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:subnet_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">security_group_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;Security group of instance&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:security_group_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now that the template version and common parameters have moved into the new <code>base</code> component, we can
+make use of them by loading that component as we instantiate our new template, specifying that the
+template will override any pieces of the component where the two intersect.</p>
+
+<p>Let&#8217;s update the SparkleFormation template to make use of the new <code>base</code> component:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:vpc_instance</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="ss">:base</span><span class="p">)</span><span class="o">.</span><span class="n">overrides</span> <span class="k">do</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">description</span> <span class="s1">&#39;make an instance, based on region, ami, subnet, and security group&#39;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">resources</span><span class="p">(</span><span class="ss">:ec2_instance</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">type</span> <span class="s1">&#39;AWS::EC2::Instance&#39;</span>
+</span><span class='line'>    <span class="n">properties</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">image_id</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:ami_id</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">security_group_ids</span> <span class="o">[</span><span class="n">ref!</span><span class="p">(</span><span class="ss">:security_group_id</span><span class="p">)</span><span class="o">]</span>
+</span><span class='line'>      <span class="n">subnet_id</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:subnet_id</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">key_name</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:key_name</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">user_data</span> <span class="n">base64!</span><span class="p">(</span>
+</span><span class='line'>        <span class="n">join!</span><span class="p">(</span>
+</span><span class='line'>          <span class="s2">&quot;#!/bin/bash -v</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;curl http://aprivatebucket.s3.amazonaws.com/bootstrap.sh -o /tmp/bootstrap.sh</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;bash /tmp/bootstrap.sh</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;# If all went well, signal success</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span class='line'>          <span class="s2">&quot;cfn-signal -e $? -r &#39;Chef Server configuration&#39;</span><span class="se">\n</span><span class="s2">&quot;</span>
+</span><span class='line'>        <span class="p">)</span>
+</span><span class='line'>      <span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">outputs</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">instance_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;Instance Id of newly created instance&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:instance_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Because the <code>base</code>component includes the parameters we need, the template no longer explicitly
+describes them.</p>
+
+<h2>Advanced tips and tricks</h2>
+
+<p>Since SparkleFormation is Ruby, we can get a little fancy. Let&#8217;s say we want to build 3 subnets into an existing VPC. If we know the VPC&#8217;s /16 subnet we can provide it as an environment variable (<code>export VPC_SUBNET="10.1.0.0/16"</code>), and then call that variable in a template that generates additional subnets:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">build</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">set!</span><span class="p">(</span><span class="s1">&#39;AWSTemplateFormatVersion&#39;</span><span class="p">,</span> <span class="s1">&#39;2010-09-09&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">octets</span> <span class="o">=</span> <span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;VPC_SUBNET].split(&#39;</span><span class="o">.</span><span class="s1">&#39;).slice(0,2).join(&#39;</span><span class="o">.</span><span class="s1">&#39;)</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">  subnets = %w(1 2 3)</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">  parameters(:vpc_id) do</span>
+</span><span class='line'><span class="s1">    type &#39;</span><span class="nb">String</span><span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">    description &#39;</span><span class="no">Existing</span> <span class="no">VPC</span> <span class="no">ID</span><span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">  parameters(:route_table_id) do</span>
+</span><span class='line'><span class="s1">    type &#39;</span><span class="nb">String</span><span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">    description &#39;</span><span class="no">Existing</span> <span class="no">VPC</span> <span class="no">Route</span> <span class="no">Table</span><span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">  subnets.each do |subnet|</span>
+</span><span class='line'><span class="s1">    resources(&quot;vpc_subnet_#{subnet}&quot;.to_sym) do</span>
+</span><span class='line'><span class="s1">    type &#39;</span><span class="no">AWS</span><span class="o">::</span><span class="no">EC2</span><span class="o">::</span><span class="no">Subnet</span><span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">    properties do</span>
+</span><span class='line'><span class="s1">      vpc_id ref!(:vpc_id)</span>
+</span><span class='line'><span class="s1">      cidr_block octets + &#39;</span><span class="o">.</span><span class="s1">&#39; + subnet + &#39;</span><span class="o">.</span><span class="mi">0</span><span class="o">/</span><span class="mi">24</span><span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">      availability_zone &#39;</span><span class="n">us</span><span class="o">-</span><span class="n">west</span><span class="o">-</span><span class="mi">2</span><span class="n">a</span><span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">    end</span>
+</span><span class='line'><span class="s1">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">  resources(&quot;vpc_subnet_route_table_association_#{subnet}&quot;.to_sym) do</span>
+</span><span class='line'><span class="s1">    type &#39;</span><span class="no">AWS</span><span class="o">::</span><span class="no">EC2</span><span class="o">::</span><span class="no">SubnetRouteTableAssociation</span><span class="err">&#39;</span>
+</span><span class='line'>    <span class="n">properties</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">route_table_id</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:route_table_id</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">subnet_id</span> <span class="n">ref!</span><span class="p">(</span><span class="s2">&quot;vpc_subnet_</span><span class="si">#{</span><span class="n">subnet</span><span class="si">}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">to_sym</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Of course we could place the subnet and route table association resources into a dynamic, so that we could just call the dynamic with some config:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">subnets</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">subnet</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">dynamic!</span><span class="p">(</span><span class="ss">:vpc_subnet</span><span class="p">,</span> <span class="n">subnet</span><span class="p">,</span> <span class="n">subnet_cidr</span> <span class="o">=&gt;</span> <span class="n">octets</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="n">subnet</span> <span class="o">+</span> <span class="s1">&#39;.0/24&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Okay, this all sounds great! But how do I <em>operate</em> it?</h2>
+
+<p>SparkleFormation by itself does not implement any means of sending its output to the CloudFormation
+API. In this simple case, a SparkleFormation template named <code>ec2_example.rb</code> is output to JSON
+which you can use with CloudFormation as usual:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;sparkle_formation&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;json&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">puts</span> <span class="no">JSON</span><span class="o">.</span><span class="n">pretty_generate</span><span class="p">(</span>
+</span><span class='line'>  <span class="no">SparkleFormation</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s1">&#39;ec2_example.rb&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <a href="https://github.com/hw-labs/knife-cloudformation">knife-cloudformation</a> plugin for Chef&#8217;s <code>knife</code> command adds sub-commands for creating, updating,
+inspecting and destroying CloudFormation stacks described by SparkleFormation code or plain JSON
+templates. Using knife-cloudformation does not require Chef to be part of your toolchain, it simply
+leverages knife as an execution platform.</p>
+
+<p>Advent readers may recall a previous article on <a href="http://awsadvent.tumblr.com/post/38685647817/strategies-reusable-cfn-templates">strategies for reusable CloudFormation templates</a>
+which advocates a &#8220;layer cake&#8221; approach to deploying infrastructure using CloudFormation stacks:</p>
+
+<blockquote><p>The overall approach is that your templates should have sufficient parameters and outputs to be
+re-usable across environments like dev, stage, qa, or prod and that each layer’s template builds on
+the next.</p></blockquote>
+
+<p>Of course this is all well and good, until we find ourselves, once again, copying and pasting.
+This time its stack outputs instead of JSON, but again, we can do better.</p>
+
+<p>The recent 0.2.0 release of knife-cloudformation adds a new <code>--apply-stack</code> parameter
+which makes operating &#8220;layer cake&#8221; infrastructure much easier.</p>
+
+<p>When passed one or more instances of <code>--apply-stack STACKNAME</code>, knife-cloudformation will cache the outputs of the named stack
+and use the values of those outputs as the default values for parameters of the same name in the stack you are creating.</p>
+
+<p>For example, a stack &#8220;coolapp-elb&#8221; which provisions an ELB and an associated security group has been configured with the following outputs:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='shell'><span class='line'><span class="nv">$ </span>knife cloudformation describe coolapp-elb
+</span><span class='line'>Resources <span class="k">for </span>stack: coolapp-elb
+</span><span class='line'>Updated                  Logical Id                Type                                     Status
+</span><span class='line'>Status Reason
+</span><span class='line'>2014-11-17 22:54:28 UTC  CoolappElb               AWS::ElasticLoadBalancing::LoadBalancer
+</span><span class='line'>CREATE_COMPLETE
+</span><span class='line'>2014-11-17 22:54:47 UTC  CoolappElbSecurityGroup  AWS::EC2::SecurityGroup
+</span><span class='line'>CREATE_COMPLETE
+</span><span class='line'>
+</span><span class='line'>Outputs <span class="k">for </span>stack: coolapp-elb
+</span><span class='line'>Elb Dns: coolapp-elb-25352800.us-east-1.elb.amazonaws.com
+</span><span class='line'>Elb Name: coolapp-elb
+</span><span class='line'>Elb Security Group: coolapp-elb-CoolappElbSecurityGroup-JSR4RUT66Z66
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The values from the ElbName and ElbSecurityGroup would be of use to us in attaching an app server
+auto scaling group to this ELB, and we could use those values automatically by setting parameter
+names in the app server template which match the ELB stack&#8217;s output names:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">SparkleFormation</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="ss">:coolapp_asg</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">parameters</span><span class="p">(</span><span class="ss">:elb_name</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'> <span class="n">parameters</span><span class="p">(</span><span class="ss">:elb_security_group</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">type</span> <span class="s1">&#39;String&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Once our <code>coolapp_asg</code> template uses parameter names that match the output names from the <code>coolapp-elb</code> stack, we can deploy the app server layer &#8220;on top&#8221; of the ELB layer using <code>--apply-stack</code>:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>knife cloudformation create coolapp-asg --apply-stack coolapp-elb
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Similarly, if we use a SparkleFormation template to build our VPC, we can set a number of VPC outputs that will be useful when building stacks inside the VPC:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="n">outputs</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">vpc_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;VPC ID&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:vpc_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">subnet_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;VPC Subnet ID&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:subnet_id</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">route_table_id</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">description</span> <span class="s1">&#39;VPC Route Table&#39;</span>
+</span><span class='line'>      <span class="n">value</span> <span class="n">ref!</span><span class="p">(</span><span class="ss">:route_table</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This &#8216;apply stack&#8217; approach is just the latest way in which the SparkleFormation tool chain can help you keep your sanity when building infrastructure with CloudFormation.</p>
+
+<h2>Further reading</h2>
+
+<p>I hope this brief tour of SparkleFormation&#8217;s capabilities has piqued your interest. For some AWS users, the combination of
+SparkleFormation and knife-cloudformation helps to address a real pain point in the infrastructure-as-code tool chain,
+easing the development and operation of layered infrastructure.</p>
+
+<p>Here&#8217;s some additional material to help you get started:</p>
+
+<ul>
+<li><a href="https://github.com/sparkleformation/sparkle_formation/tree/master/docs">SparkleFormation documentation</a> - more detailed discussion of the concepts introduced here, and mmore!</li>
+<li><a href="https://github.com/hw-labs/sparkleformation-starter-kit">SparkleFormation starter kit</a> - an example repository containing some basic templates for deploying a VPC and an EC2 instance inside that VPC.</li>
+<li><a href="https://www.youtube.com/watch?v=JnNWn3BoAcM&amp;t=2h40m50s">Sean Porter&#8217;s SparkleFormation ignite talk from DevOpsDays Vancouver 2014</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Silencing Sensu with a Chef Handler]]></title>
+    <link href="http://rootdown.net/blog/2013/09/25/silencing-sensu-with-a-chef-handler/"/>
+    <updated>2013-09-25T10:43:00-06:00</updated>
+    <id>http://rootdown.net/blog/2013/09/25/silencing-sensu-with-a-chef-handler</id>
+    <content type="html"><![CDATA[<h1>Introduction</h1>
+
+<p>I have a lot of warm feelings for <a href="http://www.sensuapp.org/">Sensu</a>, a flexible, scalable open source monitoring framework. At <a href="http://www.needle.com">Needle</a> our team has used Chef to build a Sensu instance for each of our environments, allowing us to test our automated monitoring configuration before promoting it to production, just like any other code we deploy.</p>
+
+<p>Speaking of deploying code, isn&#8217;t it obnoxious to see alerts from your monitoring system when you know that your CM tool or deploy method is running? We think so too, so I set about writing a <a href="">Chef handler</a> to</p>
+
+<h1>Sensu API and Stashes</h1>
+
+<p>Among Sensu&#8217;s virtues is its <a href="http://docs.sensuapp.org/0.10/api">RESTful API</a> which provides access to the data Sensu servers collect, such as clients &amp; events.</p>
+
+<p>The API also exposes an interface to <a href="http://docs.sensuapp.org/0.10/api/stashes.html">stashes</a>. Stashes are arbitrary JSON documents, so any JSON formatted data can be stored under the <code>/stashes</code> API endpoint.</p>
+
+<p>Sensu handlers are expected to check the stashes under the <code>/stashes/silence</code> path when processing events, and silence events whose client has a matching stash at <code>/stashes/silence/$CLIENT</code> or whose client and check match a stash at <code>/stashes/silence/$CLIENT/$CHECK</code>.</p>
+
+<h1>Chef</h1>
+
+<p>Chef&#8217;s <a href="http://docs.opscode.com/essentials_handlers.html">handler</a> functionality can be used to trigger certain behaviors in response to specific situations during a chef-client run. At this time there are three different handler types implemented by <code>Chef::Handler</code>:</p>
+
+<ul>
+<li>start handlers, triggered when the defined aspect of a chef-run starts</li>
+<li>exception handlers, triggered when the defined aspect of a chef-run fails</li>
+<li>report handlers, triggered when the defined aspect of a chef-run succeeds</li>
+</ul>
+
+
+<h1>Tying it all together</h1>
+
+<p>Combined, Sensu&#8217;s stash API endpoint and Chef&#8217;s exception and report handlers provide an excellent means for Chef to silence Sensu alerts during the time it is running on a node.</p>
+
+<p>We achieved our goal by implementing <a href="https://github.com/needle-cookbooks/chef-sensu-handler/blob/master/files/default/handlers/sensu_handlers.rb#L40-L50"><code>Chef::Handler::Sensu::Silence</code></a>, which runs as a start handler, and <a href="https://github.com/needle-cookbooks/chef-sensu-handler/blob/master/files/default/handlers/sensu_handlers.rb#L52-L62"><code>Chef::Handler::Sensu::Unsilence</code></a>, which runs as both an exception and a report handler. All of this is bundled up in our <a href="https://github.com/needle-cookbooks/chef-sensu-handler"><code>chef-sensu-handler</code></a> cookbook.</p>
+
+<p>The cookbook installs and configures the handler using the <code>node['chef_client']['sensu_api_url']</code> attribute. Once configured, the handler will attempt to create a stash under <code>/stashes/silence/$CLIENT</code> when the Chef run starts, and delete that stash when the Chef run fails or succeeds.</p>
+
+<p>We also wanted to guard against conditions where Chef could fail catastrophically and its exception handlers might not run. To counter that possibility, the handler writes a timestamp and owner name into the stash it creates when silencing the client:</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{ "timestamp": 1380133104, "owner": "chef" }</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We then authored a Sensu plugin, <a href=""><code>check-silenced.rb</code></a>, which compares the timestamp in existing silence stashes against a configurable timeout (in seconds). Once configured as part of our Sensu monitoring system, this plugin acts as a safety net which prevents clients from being silenced too long.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[HipChat LWRP for Chef]]></title>
@@ -604,8 +1510,6 @@ the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; ge
 </span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
-
-<p><strong>UPDATE:</strong> as of lately (spring 2012) I am not actively using Loggly, so I am not actively improving this code. Please let me know if you are interested in updating it or taking over the project.</p>
 ]]></content>
   </entry>
   

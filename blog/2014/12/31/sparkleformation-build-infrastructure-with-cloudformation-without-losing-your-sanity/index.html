@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>rooted - a code blog</title>
+  <title>SparkleFormation: Build infrastructure with CloudFormation without losing your sanity. - rooted - a code blog</title>
   <meta name="author" content="Cameron Johnston">
 
   
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rootdown.net">
+  <link rel="canonical" href="http://rootdown.net/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/bootstrap/bootstrap.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/bootstrap/responsive.css" media="screen, projection" rel="stylesheet" type="text/css">
@@ -96,15 +96,13 @@
 </nav>
   <div class="container">
     <div class="row-fluid">
-      <div class="span9">
-  
-  
-  
-    <article>
       
+<article class="hentry span9" role="article">
+
+  
   <header class="page-header">
     
-      <h1 class="entry-title"><a href="/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity/">SparkleFormation: Build infrastructure with CloudFormation without losing your sanity.</a></h1>
+      <h1 class="entry-title">SparkleFormation: Build infrastructure with CloudFormation without losing your sanity.</h1>
     
     
       <p class="meta">
@@ -127,7 +125,7 @@
   </header>
 
 
-  <div class="entry-content"><p><em>This article was originally published as part of the 2014 <a href="http://awsadvent.tumblr.com/">AWS Advent series</a>.</em></p>
+<div class="entry-content"><p><em>This article was originally published as part of the 2014 <a href="http://awsadvent.tumblr.com/">AWS Advent series</a>.</em></p>
 
 <h2>Introduction</h2>
 
@@ -978,97 +976,16 @@ easing the development and operation of layered infrastructure.</p>
 </ul>
 
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header class="page-header">
-    
-      <h1 class="entry-title"><a href="/blog/2013/09/25/silencing-sensu-with-a-chef-handler/">Silencing Sensu with a Chef Handler</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">Cameron Johnston</span></span>
 
-<time datetime="2013-09-25T10:43:00-06:00" pubdate data-updated="true">Sep 25<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>Introduction</h1>
-
-<p>I have a lot of warm feelings for <a href="http://www.sensuapp.org/">Sensu</a>, a flexible, scalable open source monitoring framework. At <a href="http://www.needle.com">Needle</a> our team has used Chef to build a Sensu instance for each of our environments, allowing us to test our automated monitoring configuration before promoting it to production, just like any other code we deploy.</p>
-
-<p>Speaking of deploying code, isn&#8217;t it obnoxious to see alerts from your monitoring system when you know that your CM tool or deploy method is running? We think so too, so I set about writing a <a href="">Chef handler</a> to</p>
-
-<h1>Sensu API and Stashes</h1>
-
-<p>Among Sensu&#8217;s virtues is its <a href="http://docs.sensuapp.org/0.10/api">RESTful API</a> which provides access to the data Sensu servers collect, such as clients &amp; events.</p>
-
-<p>The API also exposes an interface to <a href="http://docs.sensuapp.org/0.10/api/stashes.html">stashes</a>. Stashes are arbitrary JSON documents, so any JSON formatted data can be stored under the <code>/stashes</code> API endpoint.</p>
-
-<p>Sensu handlers are expected to check the stashes under the <code>/stashes/silence</code> path when processing events, and silence events whose client has a matching stash at <code>/stashes/silence/$CLIENT</code> or whose client and check match a stash at <code>/stashes/silence/$CLIENT/$CHECK</code>.</p>
-
-<h1>Chef</h1>
-
-<p>Chef&#8217;s <a href="http://docs.opscode.com/essentials_handlers.html">handler</a> functionality can be used to trigger certain behaviors in response to specific situations during a chef-client run. At this time there are three different handler types implemented by <code>Chef::Handler</code>:</p>
-
-<ul>
-<li>start handlers, triggered when the defined aspect of a chef-run starts</li>
-<li>exception handlers, triggered when the defined aspect of a chef-run fails</li>
-<li>report handlers, triggered when the defined aspect of a chef-run succeeds</li>
-</ul>
-
-
-<h1>Tying it all together</h1>
-
-<p>Combined, Sensu&#8217;s stash API endpoint and Chef&#8217;s exception and report handlers provide an excellent means for Chef to silence Sensu alerts during the time it is running on a node.</p>
-
-<p>We achieved our goal by implementing <a href="https://github.com/needle-cookbooks/chef-sensu-handler/blob/master/files/default/handlers/sensu_handlers.rb#L40-L50"><code>Chef::Handler::Sensu::Silence</code></a>, which runs as a start handler, and <a href="https://github.com/needle-cookbooks/chef-sensu-handler/blob/master/files/default/handlers/sensu_handlers.rb#L52-L62"><code>Chef::Handler::Sensu::Unsilence</code></a>, which runs as both an exception and a report handler. All of this is bundled up in our <a href="https://github.com/needle-cookbooks/chef-sensu-handler"><code>chef-sensu-handler</code></a> cookbook.</p>
-
-<p>The cookbook installs and configures the handler using the <code>node['chef_client']['sensu_api_url']</code> attribute. Once configured, the handler will attempt to create a stash under <code>/stashes/silence/$CLIENT</code> when the Chef run starts, and delete that stash when the Chef run fails or succeeds.</p>
-
-<p>We also wanted to guard against conditions where Chef could fail catastrophically and its exception handlers might not run. To counter that possibility, the handler writes a timestamp and owner name into the stash it creates when silencing the client:</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>{ "timestamp": 1380133104, "owner": "chef" }</span></code></pre></td></tr></table></div></figure>
-
-
-<p>We then authored a Sensu plugin, <a href=""><code>check-silenced.rb</code></a>, which compares the timestamp in existing silence stashes against a configurable timeout (in seconds). Once configured as part of our Sensu monitoring system, this plugin acts as a safety net which prevents clients from being silenced too long.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header class="page-header">
-    
-      <h1 class="entry-title"><a href="/blog/2012/05/04/hipchat-lwrp-for-chef/">HipChat LWRP for Chef</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -1080,752 +997,51 @@ easing the development and operation of layered infrastructure.</p>
   
 
 
-<time datetime="2012-05-04T12:22:00-06:00" pubdate data-updated="true">May 4<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Since releasing a Campfire LWRP for Chef a few weeks ago, my team has evaluated
-and subsequently transitioned to <a href="http://www.hipchat.com">Atlassian&#8217;s HipChat service</a>.
-Luckily I was able to reuse the framework I had already created for Campfire as the
-basis for a HipChat LWRP.</p>
-
-<p>The LWRP should work with any modern version of Chef. When you use <code>include_recipe</code>
-to access the LWRP in your own recipes, the default recipe for this cookbook will install
-the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; gem</a>.</p>
-
-<h2>Attributes</h2>
-
-<ul>
-<li><code>room</code> - the name of the room you would like to speak into (requied).</li>
-<li><code>token</code> - authentication token for your HipChat account (required).</li>
-<li><code>nickname</code> - the nickname to be used when speaking the message (required).</li>
-<li><code>message</code> - the message to speak. If a message is not specified, the name of the <code>hipchat_msg</code> resource is used.</li>
-<li><code>notify</code> - toggles whether or not users in the room should be notified by this message (defaults to true).</li>
-<li><code>color</code> - sets the color of the message in HipChat. Supported colors include: yellow, red, green, purple, or random (defaults to yellow).</li>
-<li><code>failure_ok</code> - toggles whether or not to catch the exception if an error is encountered connecting to HipChat (defaults to true).</li>
-</ul>
-
-
-<h2>Usage example</h2>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;hipchat&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">hipchat_msg</span> <span class="s1">&#39;bad news&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">room</span> <span class="s1">&#39;The Pod Bay&#39;</span>
-</span><span class='line'>  <span class="n">token</span> <span class="s1">&#39;0xdedbeef0xdedbeef0xdedbeef&#39;</span>
-</span><span class='line'>  <span class="n">nickname</span> <span class="s1">&#39;HAL9000&#39;</span>
-</span><span class='line'>  <span class="n">message</span> <span class="s2">&quot;Sorry Dave, I&#39;m afraid I can&#39;t do that: </span><span class="si">#{</span><span class="n">some_error</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="n">color</span> <span class="s1">&#39;red&#39;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Availability</h2>
-
-<p>You can find this cookbook <a href="http://www.github.com/cwjohnston/chef-hipchat">on github</a> or on the <a href="http://community.opscode.com/cookbooks/hipchat">Opscode community site</a>.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
+<time datetime="2014-12-31T10:20:00-07:00" pubdate data-updated="true">Dec 31<span>st</span>, 2014</time>
       
-  <header class="page-header">
-    
-      <h1 class="entry-title"><a href="/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/">Adding resource_tag LWRP to the aws cookbook</a></h1>
-    
-    
-      <p class="meta">
-        
 
-
-
-
-
-
-
-
+<span class="categories">
   
+    <a class='category' href='/blog/categories/aws/'>aws</a>, <a class='category' href='/blog/categories/cloudformation/'>cloudformation</a>, <a class='category' href='/blog/categories/ruby/'>ruby</a>
+  
+</span>
 
 
-<time datetime="2012-04-14T15:08:00-06:00" pubdate data-updated="true">Apr 14<span>th</span>, 2012</time>
-        
-      </p>
+    </p>
     
-  </header>
-
-
-  <div class="entry-content"><p>This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since Opscode already publishes an <code>aws</code> cookbook with providers for other AWS resources, I figured it would be worthwhile to create a provider for manipulating these tags and contribute it back upstream.</p>
-
-<p>The result of this Saturday project is the <code>resource_tag</code> LWRP. Source available <a href="https://github.com/cwjohnston/chef-opscode-aws/commit/fac8434abc380a903397be2605c48919fd128e6f">here</a>, Opscode ticket <a href="http://tickets.opscode.com/browse/COOK-1195">here</a>.</p>
-
-<h2>Actions</h2>
-
-<ul>
-<li><code>add</code> - Add tags to a resource.</li>
-<li><code>update</code> - Add or modify existing tags on a resource &#8211; this is the default action.</li>
-<li><code>remove</code> - Remove tags from a resource, but only if the specified values match the existing ones.</li>
-<li><code>force_remove</code> - Remove tags from a resource, regardless of their values.</li>
-</ul>
-
-
-<h2>Attribute Parameters</h2>
-
-<ul>
-<li><code>aws_secret_access_key</code>, <code>aws_access_key</code> - passed to <code>Opscode::AWS:Ec2</code> to authenticate, required.</li>
-<li><code>tags</code> - a hash of key value pairs to be used as resource tags, (e.g. <code>{ "Name" =&gt; "foo", "Environment" =&gt; node.chef_environment }</code>,) required.</li>
-<li><code>resource_id</code> - resources whose tags will be modified. The value may be a single ID as a string or multiple IDs in an array. If no <code>resource_id</code> is specified the name attribute will be used.</li>
-</ul>
-
-
-<h2>Usage</h2>
-
-<p><code>resource_tag</code> can be used to manipulate the tags assigned to one or more AWS resources, i.e. ec2 instances, ebs volumes or ebs volume snapshots.</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s2">&quot;aws&quot;</span>
-</span><span class='line'><span class="n">aws</span> <span class="o">=</span> <span class="n">data_bag_item</span><span class="p">(</span><span class="s2">&quot;aws&quot;</span><span class="p">,</span> <span class="s2">&quot;main&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># Assigining tags to a node to reflect it&#39;s role and environment:</span>
-</span><span class='line'><span class="n">aws_resource_tag</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;ec2&#39;</span><span class="o">][</span><span class="s1">&#39;instance_id&#39;</span><span class="o">]</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">aws_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_access_key_id&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">aws_secret_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_secret_access_key&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">tags</span><span class="p">({</span><span class="s2">&quot;Name&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;www.example.com app server&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s2">&quot;Environment&quot;</span> <span class="o">=&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">chef_environment</span><span class="p">})</span>
-</span><span class='line'>  <span class="n">action</span> <span class="ss">:update</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># Assigning a set of tags to multiple resources, e.g. ebs volumes in a disk set:</span>
-</span><span class='line'><span class="n">aws_resource_tag</span> <span class="s1">&#39;my awesome raid set&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">aws_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_access_key_id&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">aws_secret_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_secret_access_key&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">resource_id</span> <span class="o">[</span> <span class="s2">&quot;vol-d0518cb2&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-fad31a9a&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-fb106a9f&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-74ed3b14&quot;</span> <span class="o">]</span>
-</span><span class='line'>  <span class="n">tags</span><span class="p">({</span><span class="s2">&quot;Name&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;My awesome RAID disk set&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s2">&quot;Environment&quot;</span> <span class="o">=&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">chef_environment</span><span class="p">})</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>When setting tags on the node&#8217;s own EC2 instance, I recommend wrapping <code>resource_tag</code> resources in a conditional like <code>if node.has_key?('ec2')</code> so that your recipe will still run on Chef nodes outside of EC2 as well.</p>
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rootdown.net/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity/" data-via="cwjohnston" data-counturl="http://rootdown.net/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity/" >Tweet</a>
+  
+  
+  
 </div>
-  
-  
 
-
-    </article>
-  
-  
-    <article>
+    
+    
+    <section>
+      <h1>Comments</h1>
+      <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+    </section>
+    
+    <ul class="pager">
       
-  <header class="page-header">
-    
-      <h1 class="entry-title"><a href="/blog/2012/04/12/campfire-sing-a-longs-with-chef/">Campfire sing-a-longs with Chef</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-04-12T22:01:00-06:00" pubdate data-updated="true">Apr 12<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Like many small teams, Needle uses <a href="http://www.campfirenow.com">37signals&#8217; Campfire</a> chat platform for collaborating online. Along with messages exchanged between coworkers, we also use Campfire for announcing new git commits, jira tickets and successful application deployments.</p>
-
-<p>Since the code I&#8217;ve been using to send messages from Chef recipes to Campfire is virtually identical between a number of our cookbooks, I decided to turn that code into a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that anyone can use in their own recipes. The cookbook for this LWRP is <a href="http://github.com/cwjohnston/chef-campfire">available on github</a>.</p>
-
-<h2>Requirements</h2>
-
-<ul>
-<li>a Campfire API token (these are unique to each Campfire user, so if you want your messages to come from a particular user, get their token)</li>
-<li>the <code>tinder</code> gem (installed by the <code>campfire::default</code> recipe)</li>
-</ul>
-
-
-<h2>Attributes</h2>
-
-<ul>
-<li><code>subdomain</code> - the subdomain for your Campfire instance (required)</li>
-<li><code>room</code> - the name of the room you would like to speak into (requied)</li>
-<li><code>token</code> - authentication token for your Campfire account (required)</li>
-<li><code>message</code> - the message to speak. If a message is not specified, the name of the <code>campfire_msg</code> resource is used.</li>
-<li><code>paste</code> - toggles whether or not to send the message as a monospaced &#8220;paste&#8221; (defaults to false)</li>
-<li><code>play_before</code> - play the specified sound before speaking the message</li>
-<li><code>play_after</code> - play the specified sound after speaking the message</li>
-<li><code>failure_ok</code> - toggles whether or not to catch the exception if an error is encountered connecting to Campfire (defaults to true)</li>
-</ul>
-
-
-<p>A list of emoji and sounds available in Campfire can be found here: http://www.emoji-cheat-sheet.com/</p>
-
-<h2>Usage examples</h2>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;campfire&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">campfire_msg</span> <span class="s1">&#39;bad news&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">subdomain</span> <span class="s1">&#39;example&#39;</span>
-</span><span class='line'>  <span class="n">room</span> <span class="s1">&#39;Important Stuff&#39;</span>
-</span><span class='line'>  <span class="n">token</span> <span class="s1">&#39;0xdedbeef0xdedbeef0xdedbeef&#39;</span>
-</span><span class='line'>  <span class="n">message</span> <span class="s2">&quot;I have some bad news... there was an error: </span><span class="si">#{</span><span class="n">some_error</span><span class="si">}</span><span class="s2">&quot;</span>
-</span><span class='line'>  <span class="n">play_after</span> <span class="s1">&#39;trombone&#39;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
+      <li class="previous"><a class="basic-alignment left"
+        href="/blog/2013/09/25/silencing-sensu-with-a-chef-handler/" title="Previous Post:
+        Silencing Sensu with a Chef Handler">&laquo; Silencing Sensu with a Chef Handler</a></li>
       
-  <header class="page-header">
-    
-      <h1 class="entry-title"><a href="/blog/2012/04/10/introducing-deploy-wrapper/">Using deploy_wrapper to set the stage for deployments via Chef</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-04-10T13:25:00-06:00" pubdate data-updated="true">Apr 10<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Chef&#8217;s <code>deploy</code> and <code>deploy_revision</code> resources provide a useful mechanism for deploying applications as part of a chef-client or chef-solo run, without depending on an external system (e.g. Capistrano.) Many Chef users learning to use these resources for the first time will find that they also need to install an SSH deploy key and an SSH wrapper script for Git before they can make effective use of these deploy resources, and that the Chef wiki doesn&#8217;t provide much documentation around this issue.</p>
-
-<p>Enter <a href="http://github.com/cwjohnston/chef-deploy_wrapper"><code>deploy_wrapper</code></a>: a Chef definition which handles the installation of an SSH deploy key and SSH wrapper script to be used by a <code>deploy</code> or <code>deploy_revision</code> resource.</p>
-
-<p>Before <code>deploy_wrapper</code>, a recipe to configure the required resources to make an automated <code>deploy</code> or <code>deploy_revision</code> possible might look something like this:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">directory</span> <span class="s1">&#39;/root/.ssh&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">owner</span> <span class="s2">&quot;root&quot;</span>
-</span><span class='line'>  <span class="n">group</span> <span class="s2">&quot;root&quot;</span>
-</span><span class='line'>  <span class="n">mode</span> <span class="mo">0640</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">directory</span> <span class="s1">&#39;/opt/myapp/shared&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">owner</span> <span class="s2">&quot;root&quot;</span>
-</span><span class='line'>  <span class="n">group</span> <span class="s2">&quot;root&quot;</span>
-</span><span class='line'>  <span class="n">mode</span> <span class="mo">0755</span>
-</span><span class='line'>  <span class="n">recursive</span> <span class="kp">true</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">deploy_key</span> <span class="o">=</span> <span class="n">data_bag_item</span><span class="p">(</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="s1">&#39;myapp_deploy_key&#39;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">template</span> <span class="s2">&quot;/root/.ssh/myapp_deploy_key&quot;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;deploy_key.erb&quot;</span>
-</span><span class='line'>  <span class="n">owner</span> <span class="s2">&quot;root&quot;</span>
-</span><span class='line'>  <span class="n">group</span> <span class="s2">&quot;root&quot;</span>
-</span><span class='line'>  <span class="n">mode</span> <span class="mo">0600</span>
-</span><span class='line'>  <span class="n">variables</span><span class="p">({</span> <span class="ss">:deploy_key</span> <span class="o">=&gt;</span> <span class="n">deploy_key</span> <span class="p">})</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">template</span> <span class="s2">&quot;/opt/myapp/shared/myapp_deploy_wrapper.sh&quot;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">source</span> <span class="s2">&quot;ssh_wrapper.sh.erb&quot;</span>
-</span><span class='line'>  <span class="n">owner</span> <span class="s2">&quot;root&quot;</span>
-</span><span class='line'>  <span class="n">group</span> <span class="s2">&quot;root&quot;</span>
-</span><span class='line'>  <span class="n">mode</span> <span class="mo">0755</span>
-</span><span class='line'>  <span class="n">variables</span><span class="p">({</span>
-</span><span class='line'>    <span class="ss">:deploy_key_path</span> <span class="o">=&gt;</span> <span class="s2">&quot;/root/.ssh/myapp_deploy_key&quot;</span>
-</span><span class='line'>  <span class="p">})</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">deploy_revision</span> <span class="s2">&quot;/opt/myapp&quot;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">repository</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;myapp&#39;</span><span class="o">][</span><span class="s1">&#39;repository&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">revision</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;myapp&#39;</span><span class="o">][</span><span class="s1">&#39;revision&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'>  <span class="n">ssh_wrapper</span> <span class="s2">&quot;/opt/myapp/shared/myapp_deploy_wrapper.sh&quot;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Not counting the source to template files for these resources, thats almost 30 lines of code just to set the stage for a deployment. It didn&#8217;t take long for me to grow tired of reusing this rather verbose pattern across a growing number of recipes.</p>
-
-<p>Here&#8217;s how I accomplish the same thing with the <code>deploy_wrapper</code> definition:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">deploy_key</span> <span class="o">=</span> <span class="n">data_bag_item</span><span class="p">(</span><span class="s1">&#39;keys&#39;</span><span class="p">,</span> <span class="s1">&#39;myapp_deploy_key&#39;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">deploy_wrapper</span> <span class="s2">&quot;myapp&quot;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">ssh_wrapper_dir</span> <span class="s2">&quot;/opt/myapp/shared&quot;</span>
-</span><span class='line'>  <span class="n">ssh_key_dir</span> <span class="s2">&quot;/root/.ssh&quot;</span>
-</span><span class='line'>  <span class="n">ssh_key_data</span> <span class="n">deploy_key</span>
-</span><span class='line'>  <span class="n">sloppy</span> <span class="kp">true</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">deploy_revision</span> <span class="s2">&quot;/opt/myapp&quot;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">repository</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;myapp&#39;</span><span class="o">][</span><span class="s1">&#39;repository&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">revision</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;myapp&#39;</span><span class="o">][</span><span class="s1">&#39;revision&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="o">.</span><span class="n">.</span><span class="o">.</span>
-</span><span class='line'>  <span class="n">ssh_wrapper</span> <span class="s2">&quot;/opt/myapp/shared/myapp_deploy_wrapper.sh&quot;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Much better, right? Well, a lot shorter anyway. Now let&#8217;s talk about what the <code>deploy_wrapper</code> parameters used in the above example are doing.</p>
-
-<p>The <code>ssh_key_dir</code> and <code>ssh_wrapper_dir</code> parameters specify directories which will be created by Chef. In the case of <code>ssh_wrapper_dir</code>, the git SSH wrapper script will automatically be created in this directory following the pattern &#8220;APPNAME_deploy_wrapper.sh&#8221;, using the value of the name parameter (in this case, <code>myapp</code>) in place of &#8220;APPNAME&#8221;.</p>
-
-<p>Similarly, an SSH key file containing the data passed to the <code>ssh_key_data</code> parameter will be created in the directory specified as the value for the <code>ssh_key_dir</code> parameter. The key file will be named following the pattern &#8220;APPNAME_deploy_key&#8221;, using the value of the name parameter (<code>myapp</code>) in place of &#8220;APPNAME&#8221;.</p>
-
-<p>The <code>sloppy</code> parameter is the only optional one. Because the default configuration of most most ssh installations is to require manual verification when accepting a remote host&#8217;s key for the first time, the <code>sloppy</code> parameter allows one to toggle key checking (<code>StrictHostKeyChecking</code>) on or off.</p>
-
-<p>When the value for <code>sloppy</code> is <code>true</code>, the wrapper script will accept any host key without prompting. The default value for <code>sloppy</code> is <code>false</code>, meaning that additional Chef resources, or &#8230; <em>*gasp*</em> &#8230; manual intervention, will be required in order to set up a <code>known_hosts</code> file before deployments can run successfully.</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
+      <li><a href="/blog/archives">Blog Archives</a></li>
       
-  <header class="page-header">
-    
-      <h1 class="entry-title"><a href="/blog/2012/03/16/managing-pingdom-service-checks-with-chef/">Managing Pingdom service checks with Chef</a></h1>
-    
-    
-      <p class="meta">
-        
+    </ul>
+  </footer>
+</article>
 
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2012-03-16T14:08:00-06:00" pubdate data-updated="true">Mar 16<span>th</span>, 2012</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>Monitoring with Pingdom</h2>
-
-<p>Swedish firm <a href="http://pingdom.com/">Pingdom</a> offers a flexible, affordable service for monitoring the availability and response time of web sites, applications and other services. At Needle we provision an instance of our chat server for each partner we work with, and as a result I&#8217;ve found myself creating a Pingdom service check to monitor each of these instances. As you might imagine, this is a rather repetitive task, and the configuration is basically the same for each service check &#8211; a process ripe for automation!</p>
-
-<p>Thankfully Pingdom provides a <a href="http://www.pingdom.com/services/api/">REST API</a> for interacting with the service programatically, which has made it possible for me to write a Chef LWRP for creating and modifying Pingdom service checks. Source available here: <a href="http://github.com/cwjohnston/chef-pingdom">http://github.com/cwjohnston/chef-pingdom</a></p>
-
-<h2>Requirements</h2>
-
-<p>Requires Chef 0.7.10 or higher for Lightweight Resource and Provider support. Chef 0.10+ is recommended as this cookbook has not been tested with earlier versions.</p>
-
-<p>A valid username, password and API key for your Pingdom account is required.</p>
-
-<h2>Recipes</h2>
-
-<p>This cookbook provides an empty default recipe which installs the required <code>json</code> gem (verison &lt;=1.6.1). Chef already requires this gem, so it&#8217;s really just included in the interests of completeness.</p>
-
-<h2>Libraries</h2>
-
-<p>This cookbook provides the <code>Opscode::Pingdom::Check</code> library module which is required by all the check providers.</p>
-
-<h2>Resources and Providers</h2>
-
-<p>This cookbook provides a single resource (<code>pingdom_check</code>) and corresponding provider for managing Pingdom service checks.</p>
-
-<p><code>pingdom_check</code> resources support the actions <code>add</code> and <code>delete</code>, <code>add</code> being the default. Each <code>pingdom_check</code> resource requires the following resource attributes:</p>
-
-<ul>
-<li><code>host</code> - indicates the hostname (or IP address) which the service check will target</li>
-<li><code>api_key</code> - a valid API key for your Pingdom account</li>
-<li><code>username</code> - your Pingdom username</li>
-<li><code>password</code> - your Pingdom password</li>
-</ul>
-
-
-<p><code>pingdom_check</code> resources may also specifiy values for the optional <code>type</code> and <code>check_params</code> attributes.</p>
-
-<p>The <code>type</code> attribute will accept one of the following service check types. If no value is specified, the check type will default to <code>http</code>.</p>
-
-<ul>
-<li>http</li>
-<li>tcp</li>
-<li>udp</li>
-<li>ping</li>
-<li>dns</li>
-<li>smtp</li>
-<li>pop3</li>
-<li>imap</li>
-</ul>
-
-
-<p>The optional <code>check_params</code> attribute is expected to be a hash containing key/value pairs which match the type-specific parameters defined by the <a href="http://www.pingdom.com/services/api-documentation-rest/#ResourceChecks">Pingdom API</a>. If no attributes are provided for <code>check_params</code>, the default values for type-specific defaults will be used.</p>
-
-<h2>Usage</h2>
-
-<p>In order to utilize this cookbook, put the following at the top of the recipe where Pingdom resources are used:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s1">&#39;pingdom&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The following resource would configure a HTTP service check for the host <code>foo.example.com</code>:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">pingdom_check</span> <span class="s1">&#39;foo http check&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">host</span> <span class="s1">&#39;foo.example.com&#39;</span><span class="n">A</span>
-</span><span class='line'>  <span class="n">api_key</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:api_key</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">username</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:username</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">password</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:password</span><span class="o">]</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The resulting HTTP service check would be created using all the Pingdom defaults for HTTP service checks.</p>
-
-<p>The following resource would configure an HTTP service check for the host <code>bar.example.com</code> utilizing some of the parameters specific to the HTTP service check type:</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">pingdom_check</span> <span class="s1">&#39;bar.example.com http status check&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">host</span> <span class="s1">&#39;bar.example.com&#39;</span>
-</span><span class='line'>  <span class="n">api_key</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:api_key</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">username</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:username</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">password</span> <span class="n">node</span><span class="o">[</span><span class="ss">:pingdom</span><span class="o">][</span><span class="ss">:password</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">check_params</span> <span class="ss">:url</span> <span class="o">=&gt;</span> <span class="s2">&quot;/status&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="ss">:shouldcontain</span> <span class="o">=&gt;</span> <span class="s2">&quot;Everything is OK!&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="ss">:sendnotificationwhendown</span> <span class="o">=&gt;</span> <span class="mi">2</span><span class="p">,</span>
-</span><span class='line'>               <span class="ss">:sendtoemail</span> <span class="o">=&gt;</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span>
-</span><span class='line'>               <span class="ss">:sendtoiphone</span> <span class="o">=&gt;</span> <span class="s2">&quot;true&quot;</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Caveats</h2>
-
-<p>At this time I consider the LWRP to be incomplete. The two major gaps are as follows:</p>
-
-<ul>
-<li>Changing the values for <code>check_params</code> does not actually update the service check&#8217;s configuration. I have done most of the initial work to implement this (available in the <code>check-updating</code> branch on github), but there are still bugs.</li>
-<li>The LWRP has no support for managing contacts.</li>
-</ul>
-
-
-<h2>Future</h2>
-
-<ul>
-<li>Add <code>update</code> action for service checks which modifies existing checks to match the values from <code>check_params</code></li>
-<li>Add <code>enable</code> and <code>disable</code> actions for service checks</li>
-<li>Add support for managing contacts (<code>pingdom_contact</code> resource)</li>
-<li>Convert <code>TrueClass</code> attribute values to <code>"true"</code> strings</li>
-<li>Validate classes passed as <code>check_params</code> values</li>
-<li>One must look up contact IDs manually when setting <code>contactids</code> in <code>check_params</code></li>
-</ul>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header class="page-header">
-    
-      <h1 class="entry-title"><a href="/blog/2011/12/12/managing-loggly-devices-and-inputs-via-chef/">Managing Loggly devices and inputs via Chef</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2011-12-12T15:19:00-07:00" pubdate data-updated="true">Dec 12<span>th</span>, 2011</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h1>Introduction</h1>
-
-<p>Recently I have been experimenting with the logging-as-a-service platform at <a href="http://loggly.com/">Loggly</a>. It seems pretty promising, and there&#8217;s a free tier for those who are indexing less than 200MB per day.</p>
-
-<p>Since I am using Chef to manage my systems, I decided I would take a crack at writing a <a href="http://wiki.opscode.com/display/chef/Lightweight+Resources+and+Providers+%28LWRP%29">LWRP</a> that would allow me to manage devices and inputs on my Loggly account through Chef. This makes it possible for new nodes to register themselves as Loggly devices when they are provisioned, without requiring me to make a trip to the Loggly control panel. The resulting cookbook is available here: <a href="http://github.com/cwjohnston/chef-loggly">http://github.com/cwjohnston/chef-loggly</a></p>
-
-<h1>Requirements</h1>
-
-<ul>
-<li>Valid Loggly account username and password</li>
-<li><code>json</code> ruby gem</li>
-</ul>
-
-
-<h2>Required node attributes</h2>
-
-<ul>
-<li><code>node['loggly']['username']</code> - Your Loggly username.</li>
-<li><code>node['loggly']['password']</code> - Your Loggly password.</li>
-</ul>
-
-
-<p>In the future these attributes should be made optional so that usernames and passwords can be specified as parameters for resource attributes.</p>
-
-<h1>Recipes</h1>
-
-<ul>
-<li><code>default</code> - simply installs the <code>json</code> gem. Chef requires this gem as well, so it should already be available.</li>
-<li><code>rsyslog</code> - creates a loggly input for receiving syslog messages, registers the node as a device on that input and configures rsyslog to forward syslog messages there.</li>
-</ul>
-
-
-<h1>Resources</h1>
-
-<h2><code>loggly_input</code> - manage a log input</h2>
-
-<h3>Attributes</h3>
-
-<ul>
-<li><code>domain</code> - The subdomain for your loggly account</li>
-<li><code>description</code> - An optional descriptor for the input</li>
-<li><code>type</code> - The kind of input to create. May be one of the following:
-
-<ul>
-<li><code>http</code></li>
-<li><code>syslogudp</code></li>
-<li><code>syslogtcp</code></li>
-<li><code>syslog_tls</code></li>
-<li><code>syslogtcp_strip</code></li>
-<li><code>syslogudp_strip</code></li>
-</ul>
-</li>
-</ul>
-
-
-<h3>Actions</h3>
-
-<ul>
-<li><code>create</code> - create the named input (default)</li>
-<li><code>delete</code> - delete the named input</li>
-</ul>
-
-
-<h3>Usage</h3>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">loggly_input</span> <span class="s2">&quot;production-syslog&quot;</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">domain</span> <span class="s2">&quot;examplecorp&quot;</span>
-</span><span class='line'>    <span class="n">type</span> <span class="s2">&quot;syslogtcp&quot;</span>
-</span><span class='line'>    <span class="n">description</span> <span class="s2">&quot;syslog messages from production nodes&quot;</span>
-</span><span class='line'>    <span class="n">action</span> <span class="ss">:create</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2><code>loggly_device</code> - manage a device which sends logs to an input</h2>
-
-<p>The name of a <code>loggly_device</code> resource should be the IP address for the device. Loggly doesn&#8217;t do DNS lookups, it just wants the device&#8217;s IP.</p>
-
-<h3>Resource Attributes</h3>
-
-<ul>
-<li><code>username</code> - Your Loggly username. if no value is provided for this attribute, the value of <code>node['loggly']['username']</code> will be used.</li>
-<li><code>password</code> - Your Loggly password. if no value is provided for this attribute, the value of <code>node['loggly']['password']</code> will be used.</li>
-<li><code>domain</code> - The subdomain for your loggly account</li>
-<li><code>input</code> - the name of the input this device should be added to</li>
-</ul>
-
-
-<h3>Resource Actions</h3>
-
-<ul>
-<li><code>add</code> - add the device to the named input (default)</li>
-<li><code>delete</code> - remove the device from the named input</li>
-</ul>
-
-
-<h3>Usage</h3>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">loggly_device</span> <span class="n">node</span><span class="o">[</span><span class="ss">:ipaddress</span><span class="o">]</span> <span class="k">do</span>
-</span><span class='line'>    <span class="n">domain</span> <span class="s2">&quot;examplecorp&quot;</span>
-</span><span class='line'>    <span class="n">input</span> <span class="s2">&quot;production-syslog&quot;</span>
-</span><span class='line'>    <span class="n">action</span> <span class="ss">:add</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  <ul class="pager">
-    
-    <li><a href="/blog/archives">Blog Archives</a></li>
-    
-  </ul>
-</div>
 <aside class="sidebar-nav span3">
   
     <section>
-<p>Hi, I&#8217;m Cameron and these are some of my opinions.</p>
-<p><a href="/about">More&#8230;</a></p>
+<p>Hi, I'm Cameron and these are some of my opinions.</p>
+<p><a href="/about">More...</a></p>
 </section>
 <section class="well">
   <ul id="recent_posts" class="nav nav-list">
@@ -1857,7 +1073,7 @@ the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; ge
 <section class="well">
   <ul id="gh_repos" class="nav">
     <li class="nav-header">GitHub Repos</li>
-    <li class="loading">Status updating&#8230;</li>
+    <li class="loading">Status updating...</li>
   </ul>
   
   <a href="https://github.com/cwjohnston">@cwjohnston</a> on GitHub
@@ -1887,7 +1103,7 @@ the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; ge
 <section class="well">
   <ul id="tweets" class="nav">
     <li class="nav-header">Latest Tweets</li>
-    <li class="loading">Status updating&#8230;</li>
+    <li class="loading">Status updating...</li>
   </ul>
   <script type="text/javascript">
     $.domReady(function(){
@@ -1903,7 +1119,7 @@ the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; ge
 
 <section class="well">
   <h1>My Pinboard</h1>
-  <ul id="pinboard_linkroll" class="nav">Fetching linkroll&#8230;</ul>
+  <ul id="pinboard_linkroll" class="nav">Fetching linkroll...</ul>
   <p><a href="http://pinboard.in/u:cwjohnston">My Pinboard Bookmarks &raquo;</a></p>
 </section>
 <script type="text/javascript">
@@ -1923,6 +1139,7 @@ the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; ge
   
 </aside>
 
+
     </div>
   </div>
   <footer role="contentinfo" class="page-footer"><hr>
@@ -1938,7 +1155,10 @@ the required <a href="http://rubygems.org/gems/hipchat">&#8216;hipchat&#8217; ge
       var disqus_shortname = 'rootdowndotnet';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://rootdown.net/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity/';
+        var disqus_url = 'http://rootdown.net/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

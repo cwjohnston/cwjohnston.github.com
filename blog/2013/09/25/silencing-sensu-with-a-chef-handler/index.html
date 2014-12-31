@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Adding resource_tag LWRP to the aws cookbook - rooted - a code blog</title>
+  <title>Silencing Sensu with a Chef Handler - rooted - a code blog</title>
   <meta name="author" content="Cameron Johnston">
 
   
-  <meta name="description" content="This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since &hellip;">
+  <meta name="description" content="Introduction I have a lot of warm feelings for Sensu, a flexible, scalable open source monitoring framework. At Needle our team has used Chef to &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook">
+  <link rel="canonical" href="http://rootdown.net/blog/2013/09/25/silencing-sensu-with-a-chef-handler">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/bootstrap/bootstrap.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/bootstrap/responsive.css" media="screen, projection" rel="stylesheet" type="text/css">
@@ -102,7 +102,7 @@
   
   <header class="page-header">
     
-      <h1 class="entry-title">Adding resource_tag LWRP to the aws cookbook</h1>
+      <h1 class="entry-title">Silencing Sensu with a Chef Handler</h1>
     
     
       <p class="meta">
@@ -118,84 +118,53 @@
   
 
 
-<time datetime="2012-04-14T15:08:00-06:00" pubdate data-updated="true">Apr 14<span>th</span>, 2012</time>
+<time datetime="2013-09-25T10:43:00-06:00" pubdate data-updated="true">Sep 25<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>This weekend I decided that I&#8217;d had enough with reusing the same pattern for manipulating tags on EC2 instances across multiple recipes. Since Opscode already publishes an <code>aws</code> cookbook with providers for other AWS resources, I figured it would be worthwhile to create a provider for manipulating these tags and contribute it back upstream.</p>
+<div class="entry-content"><h1>Introduction</h1>
 
-<p>The result of this Saturday project is the <code>resource_tag</code> LWRP. Source available <a href="https://github.com/cwjohnston/chef-opscode-aws/commit/fac8434abc380a903397be2605c48919fd128e6f">here</a>, Opscode ticket <a href="http://tickets.opscode.com/browse/COOK-1195">here</a>.</p>
+<p>I have a lot of warm feelings for <a href="http://www.sensuapp.org/">Sensu</a>, a flexible, scalable open source monitoring framework. At <a href="http://www.needle.com">Needle</a> our team has used Chef to build a Sensu instance for each of our environments, allowing us to test our automated monitoring configuration before promoting it to production, just like any other code we deploy.</p>
 
-<h2>Actions</h2>
+<p>Speaking of deploying code, isn&#8217;t it obnoxious to see alerts from your monitoring system when you know that your CM tool or deploy method is running? We think so too, so I set about writing a <a href="">Chef handler</a> to</p>
+
+<h1>Sensu API and Stashes</h1>
+
+<p>Among Sensu&#8217;s virtues is its <a href="http://docs.sensuapp.org/0.10/api">RESTful API</a> which provides access to the data Sensu servers collect, such as clients &amp; events.</p>
+
+<p>The API also exposes an interface to <a href="http://docs.sensuapp.org/0.10/api/stashes.html">stashes</a>. Stashes are arbitrary JSON documents, so any JSON formatted data can be stored under the <code>/stashes</code> API endpoint.</p>
+
+<p>Sensu handlers are expected to check the stashes under the <code>/stashes/silence</code> path when processing events, and silence events whose client has a matching stash at <code>/stashes/silence/$CLIENT</code> or whose client and check match a stash at <code>/stashes/silence/$CLIENT/$CHECK</code>.</p>
+
+<h1>Chef</h1>
+
+<p>Chef&#8217;s <a href="http://docs.opscode.com/essentials_handlers.html">handler</a> functionality can be used to trigger certain behaviors in response to specific situations during a chef-client run. At this time there are three different handler types implemented by <code>Chef::Handler</code>:</p>
 
 <ul>
-<li><code>add</code> - Add tags to a resource.</li>
-<li><code>update</code> - Add or modify existing tags on a resource &#8211; this is the default action.</li>
-<li><code>remove</code> - Remove tags from a resource, but only if the specified values match the existing ones.</li>
-<li><code>force_remove</code> - Remove tags from a resource, regardless of their values.</li>
+<li>start handlers, triggered when the defined aspect of a chef-run starts</li>
+<li>exception handlers, triggered when the defined aspect of a chef-run fails</li>
+<li>report handlers, triggered when the defined aspect of a chef-run succeeds</li>
 </ul>
 
 
-<h2>Attribute Parameters</h2>
+<h1>Tying it all together</h1>
 
-<ul>
-<li><code>aws_secret_access_key</code>, <code>aws_access_key</code> - passed to <code>Opscode::AWS:Ec2</code> to authenticate, required.</li>
-<li><code>tags</code> - a hash of key value pairs to be used as resource tags, (e.g. <code>{ "Name" =&gt; "foo", "Environment" =&gt; node.chef_environment }</code>,) required.</li>
-<li><code>resource_id</code> - resources whose tags will be modified. The value may be a single ID as a string or multiple IDs in an array. If no <code>resource_id</code> is specified the name attribute will be used.</li>
-</ul>
+<p>Combined, Sensu&#8217;s stash API endpoint and Chef&#8217;s exception and report handlers provide an excellent means for Chef to silence Sensu alerts during the time it is running on a node.</p>
 
+<p>We achieved our goal by implementing <a href="https://github.com/needle-cookbooks/chef-sensu-handler/blob/master/files/default/handlers/sensu_handlers.rb#L40-L50"><code>Chef::Handler::Sensu::Silence</code></a>, which runs as a start handler, and <a href="https://github.com/needle-cookbooks/chef-sensu-handler/blob/master/files/default/handlers/sensu_handlers.rb#L52-L62"><code>Chef::Handler::Sensu::Unsilence</code></a>, which runs as both an exception and a report handler. All of this is bundled up in our <a href="https://github.com/needle-cookbooks/chef-sensu-handler"><code>chef-sensu-handler</code></a> cookbook.</p>
 
-<h2>Usage</h2>
+<p>The cookbook installs and configures the handler using the <code>node['chef_client']['sensu_api_url']</code> attribute. Once configured, the handler will attempt to create a stash under <code>/stashes/silence/$CLIENT</code> when the Chef run starts, and delete that stash when the Chef run fails or succeeds.</p>
 
-<p><code>resource_tag</code> can be used to manipulate the tags assigned to one or more AWS resources, i.e. ec2 instances, ebs volumes or ebs volume snapshots.</p>
+<p>We also wanted to guard against conditions where Chef could fail catastrophically and its exception handlers might not run. To counter that possibility, the handler writes a timestamp and owner name into the stash it creates when silencing the client:</p>
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">include_recipe</span> <span class="s2">&quot;aws&quot;</span>
-</span><span class='line'><span class="n">aws</span> <span class="o">=</span> <span class="n">data_bag_item</span><span class="p">(</span><span class="s2">&quot;aws&quot;</span><span class="p">,</span> <span class="s2">&quot;main&quot;</span><span class="p">)</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># Assigining tags to a node to reflect it&#39;s role and environment:</span>
-</span><span class='line'><span class="n">aws_resource_tag</span> <span class="n">node</span><span class="o">[</span><span class="s1">&#39;ec2&#39;</span><span class="o">][</span><span class="s1">&#39;instance_id&#39;</span><span class="o">]</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">aws_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_access_key_id&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">aws_secret_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_secret_access_key&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">tags</span><span class="p">({</span><span class="s2">&quot;Name&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;www.example.com app server&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s2">&quot;Environment&quot;</span> <span class="o">=&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">chef_environment</span><span class="p">})</span>
-</span><span class='line'>  <span class="n">action</span> <span class="ss">:update</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># Assigning a set of tags to multiple resources, e.g. ebs volumes in a disk set:</span>
-</span><span class='line'><span class="n">aws_resource_tag</span> <span class="s1">&#39;my awesome raid set&#39;</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">aws_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_access_key_id&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">aws_secret_access_key</span> <span class="n">aws</span><span class="o">[</span><span class="s1">&#39;aws_secret_access_key&#39;</span><span class="o">]</span>
-</span><span class='line'>  <span class="n">resource_id</span> <span class="o">[</span> <span class="s2">&quot;vol-d0518cb2&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-fad31a9a&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-fb106a9f&quot;</span><span class="p">,</span> <span class="s2">&quot;vol-74ed3b14&quot;</span> <span class="o">]</span>
-</span><span class='line'>  <span class="n">tags</span><span class="p">({</span><span class="s2">&quot;Name&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;My awesome RAID disk set&quot;</span><span class="p">,</span>
-</span><span class='line'>        <span class="s2">&quot;Environment&quot;</span> <span class="o">=&gt;</span> <span class="n">node</span><span class="o">.</span><span class="n">chef_environment</span><span class="p">})</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>{ "timestamp": 1380133104, "owner": "chef" }</span></code></pre></td></tr></table></div></figure>
 
 
-<p>When setting tags on the node&#8217;s own EC2 instance, I recommend wrapping <code>resource_tag</code> resources in a conditional like <code>if node.has_key?('ec2')</code> so that your recipe will still run on Chef nodes outside of EC2 as well.</p>
+<p>We then authored a Sensu plugin, <a href=""><code>check-silenced.rb</code></a>, which compares the timestamp in existing silence stashes against a configurable timeout (in seconds). Once configured as part of our Sensu monitoring system, this plugin acts as a safety net which prevents clients from being silenced too long.</p>
 </div>
 
 
@@ -218,12 +187,12 @@
   
 
 
-<time datetime="2012-04-14T15:08:00-06:00" pubdate data-updated="true">Apr 14<span>th</span>, 2012</time>
+<time datetime="2013-09-25T10:43:00-06:00" pubdate data-updated="true">Sep 25<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/aws/'>aws</a>, <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/lwrp/'>lwrp</a>
+    <a class='category' href='/blog/categories/chef/'>chef</a>, <a class='category' href='/blog/categories/handlers/'>handlers</a>, <a class='category' href='/blog/categories/sensu/'>sensu</a>
   
 </span>
 
@@ -232,7 +201,7 @@
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/" data-via="cwjohnston" data-counturl="http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://rootdown.net/blog/2013/09/25/silencing-sensu-with-a-chef-handler/" data-via="cwjohnston" data-counturl="http://rootdown.net/blog/2013/09/25/silencing-sensu-with-a-chef-handler/" >Tweet</a>
   
   
   
@@ -249,13 +218,13 @@
     <ul class="pager">
       
       <li class="previous"><a class="basic-alignment left"
-        href="/blog/2012/04/12/campfire-sing-a-longs-with-chef/" title="Previous Post:
-        Campfire sing-a-longs with Chef">&laquo; Campfire sing-a-longs with Chef</a></li>
+        href="/blog/2012/05/04/hipchat-lwrp-for-chef/" title="Previous Post:
+        HipChat LWRP for Chef">&laquo; HipChat LWRP for Chef</a></li>
       
       <li><a href="/blog/archives">Blog Archives</a></li>
       
-      <li class="next"><a class="basic-alignment right" href="/blog/2012/05/04/hipchat-lwrp-for-chef/"
-        title="Next Post: HipChat LWRP for Chef">HipChat LWRP for Chef
+      <li class="next"><a class="basic-alignment right" href="/blog/2014/12/31/sparkleformation-build-infrastructure-with-cloudformation-without-losing-your-sanity/"
+        title="Next Post: SparkleFormation: Build infrastructure with CloudFormation without losing your sanity.">SparkleFormation: Build infrastructure with CloudFormation without losing your sanity.
         &raquo;</a></li>
       
     </ul>
@@ -381,8 +350,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/';
-        var disqus_url = 'http://rootdown.net/blog/2012/04/14/adding-resource-tag-lwrp-to-the-aws-cookbook/';
+        var disqus_identifier = 'http://rootdown.net/blog/2013/09/25/silencing-sensu-with-a-chef-handler/';
+        var disqus_url = 'http://rootdown.net/blog/2013/09/25/silencing-sensu-with-a-chef-handler/';
         var disqus_script = 'embed.js';
       
     (function () {
