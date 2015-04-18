@@ -4,7 +4,7 @@
   <title><![CDATA[Category: aws | rooted - a code blog]]></title>
   <link href="http://rootdown.net/blog/categories/aws/atom.xml" rel="self"/>
   <link href="http://rootdown.net/"/>
-  <updated>2014-12-31T11:10:59-07:00</updated>
+  <updated>2015-04-17T22:39:15-06:00</updated>
   <id>http://rootdown.net/</id>
   <author>
     <name><![CDATA[Cameron Johnston]]></name>
@@ -12,6 +12,102 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Vendoring aws-cfn-bootstrap for more reliable CloudFormation builds]]></title>
+    <link href="http://rootdown.net/blog/2015/04/17/vendoring-aws-cfn-bootstrap-for-more-reliable-cloudformation-builds/"/>
+    <updated>2015-04-17T19:57:00-06:00</updated>
+    <id>http://rootdown.net/blog/2015/04/17/vendoring-aws-cfn-bootstrap-for-more-reliable-cloudformation-builds</id>
+    <content type="html"><![CDATA[<p>Many <a href="http://sparkleformation.github.io/sparkle_formation/UserDocs">SparkleFormation</a> templates make extensive use of the <code>cfn-init</code> and <code>cfn-signal</code> commands provided by the <a href="http://aws.amazon.com/developertools/AWS-CloudFormation/4026240853893296">aws-cfn-bootstrap module</a>, utilities authored by Amazon Web Services. Amazon's recommended install method seems to be calling <code>easy_install</code> against an unversioned tarball artifact:
+<code>
+easy_install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+</code></p>
+
+<p>Here <code>easy_install</code> downloads the artifact, unpacks it, reads its dependencies, connects to the PyPi package index, retrieves information about where to get those dependencies, and so on. This all works well enough, until one of the many different package sources for one of the module's dependencies begins to behave erratically. On more than one occassion this process has taken  so long to return an error from misbehaving artifact source that all stack deployments subsequently fail due to timeouts.</p>
+
+<p>Having been bitten by this more than once, I determined that vendorizing the aws-cfn-bootstrap code, along with its dependencies, would probably be the best way to make my builds more reliable.</p>
+
+<p>Initially I experimented with virtualenv, but ultimately found it difficult to use for manufacturing a truly portable artifact for this purpose. Additional literature review indicated that repackaging aws-cfn-bootstrap and its dependencies as a Python wheels might be just what I needed.</p>
+
+<p>On a default Amazon AMI, I installed pip via the prescribed installation method:
+<code>
+$ curl --silent -O https://bootstrap.pypa.io/get-pip.py
+$ python get-pip.py
+Downloading/unpacking pip
+  Downloading pip-1.5.6-py2.py3-none-any.whl (1.0MB): 1.0MB downloaded
+Installing collected packages: pip
+Successfully installed pip
+Cleaning up...
+$ pip --version
+pip 1.5.6 from /usr/lib/python2.6/site-packages (python 2.6)
+$ pip install wheels
+Downloading/unpacking wheel
+  Downloading wheel-0.24.0-py2.py3-none-any.whl (63kB): 63kB downloaded
+Requirement already satisfied (use --upgrade to upgrade): argparse in /usr/lib/python2.6/site-packages (from wheel)
+Installing collected packages: wheel
+Successfully installed wheel
+Cleaning up...
+</code></p>
+
+<p>With pip and wheel installed, building wheels for each module can be done in one simple command:
+```
+$ pip wheel -w aws-cfn-bootstrap-wheelhouse https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+Downloading/unpacking https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+  Downloading aws-cfn-bootstrap-latest.tar.gz (441kB): 441kB downloaded
+  Running setup.py (path:/var/folders/17/2k89dx490h77lxq1dx76229m0000gn/T/pip-H4qLj3-build/setup.py) egg_info for package from https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz</p>
+
+<p>Downloading/unpacking python-daemon>=1.5.2 (from aws-cfn-bootstrap==1.4)
+  Downloading python-daemon-1.6.1.tar.gz (47kB): 47kB downloaded
+  Running setup.py (path:/private/var/folders/17/2k89dx490h77lxq1dx76229m0000gn/T/pip_build_cwj/python-daemon/setup.py) egg_info for package python-daemon</p>
+
+<p>Downloading/unpacking pystache>=0.4.0 (from aws-cfn-bootstrap==1.4)
+  Downloading pystache-0.5.4.tar.gz (75kB): 75kB downloaded
+  Running setup.py (path:/private/var/folders/17/2k89dx490h77lxq1dx76229m0000gn/T/pip_build_cwj/pystache/setup.py) egg_info for package pystache</p>
+
+<pre><code>pystache: using: version '5.4.2' of &lt;module 'setuptools' from '/usr/local/Cellar/python/2.7.8_2/Frameworks/Python.framework/Versions/2.7/lib/python2.7/site-packages/setuptools-5.4.2-py2.7.egg/setuptools/__init__.pyc'&gt;
+</code></pre>
+
+<p>Downloading/unpacking setuptools (from python-daemon>=1.5.2->aws-cfn-bootstrap==1.4)
+  Downloading setuptools-6.1-py2.py3-none-any.whl (533kB): 533kB downloaded
+  Saved ./aws-cfn-bootstrap-wheelhouse/setuptools-6.1-py2.py3-none-any.whl
+Downloading/unpacking lockfile>=0.9 (from python-daemon>=1.5.2->aws-cfn-bootstrap==1.4)
+  Downloading lockfile-0.10.2-py2-none-any.whl
+  Saved ./aws-cfn-bootstrap-wheelhouse/lockfile-0.10.2-py2-none-any.whl
+Building wheels for collected packages: python-daemon,pystache,aws-cfn-bootstrap
+  Running setup.py bdist_wheel for python-daemon
+  Destination directory: /Users/cwj/aws-cfn-bootstrap-wheelhouse
+  Running setup.py bdist_wheel for pystache
+  Destination directory: /Users/cwj/aws-cfn-bootstrap-wheelhouse
+  Running setup.py bdist_wheel for aws-cfn-bootstrap
+  Destination directory: /Users/cwj/aws-cfn-bootstrap-wheelhouse
+Successfully built python-daemon pystache aws-cfn-bootstrap
+Cleaning up...
+```</p>
+
+<p>The aws-cfn-bootstrap-wheelhouse directory we specified has been created and now contains a .whl file for the aws-cfn-bootstrap module and its dependencies</p>
+
+<p><code>
+$ ls -1 aws-cfn-bootstrap-wheelhouse
+aws_cfn_bootstrap-1.4-py2-none-any.whl
+lockfile-0.10.2-py2-none-any.whl
+pystache-0.5.4-py2-none-any.whl
+python_daemon-1.6.1-py2-none-any.whl
+setuptools-6.1-py2.py3-none-any.whl
+</code></p>
+
+<p>Creating a tarball of this directory yields an artifact I can place in an S3 bucket for my infrastructure, along side my own copy of get-pip.py. I have versioned these artifaces with a date stamp in their file names, and because there's nothing proprietary about the artifacts, I have marked them as world-readable. After updating our bootstrap code in the appropriate SparkleFormation registry, the relevant bootstrap script reads as follows:</p>
+
+<p><code>
+curl -o get-pip.py https://s3.amazonaws.com/my_infrastructure_bucket/get-pip-12172014.py
+curl -o aws-cfn-bootstrap-wheelhouse.tar.gz https://s3.amazonaws.com/my_infrastructure_bucket/aws-cfn-bootstrap-wheelhouse-12172014.tar.gz
+python /tmp/get-pip.py
+tar -zxvf aws-cfn-bootstrap-wheelhouse.tar.gz
+pip install --no-index --find-links=/tmp/aws-cfn-bootstrap-wheelhouse aws-cfn-bootstrap
+</code></p>
+
+<p>This process is relatively simple and can be distiled into a CI/CD pipeline job, but, as I have been unable to find tagged versions of the module, it might only be appropriate to build new artifacts on a manual trigger.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[SparkleFormation: Build infrastructure with CloudFormation without losing your sanity.]]></title>
